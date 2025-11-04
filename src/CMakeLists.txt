@@ -49,15 +49,15 @@ target_link_libraries( qpitch
 # where to install files
 install(
 	TARGETS qpitch
-	RUNTIME DESTINATION /usr/bin
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 install(
 	FILES ${CMAKE_CURRENT_SOURCE_DIR}/ui/icons/qpitch.xpm
-	DESTINATION /usr/share/pixmaps/
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/pixmaps/
 )
 
 install(
 	FILES ${CMAKE_CURRENT_SOURCE_DIR}/data/qpitch.desktop
-	DESTINATION /usr/share/applications/
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications/
 )

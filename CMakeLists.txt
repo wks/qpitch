@@ -1,4 +1,3 @@
-project(qpitch)
 ##
 # CMakeLists.txt for QPitch - Program for tuning instruments
 #
@@ -7,8 +6,11 @@ project(qpitch)
 ##
 
 # set minimum cmake version
-cmake_minimum_required( VERSION 3.0 )
+cmake_minimum_required( VERSION 4.1 )
 
+project(qpitch)
+
+include(GNUInstallDirs)
 
 # set path for additional cmake modules
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules )
