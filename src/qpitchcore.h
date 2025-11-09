@@ -209,6 +209,7 @@ private: /* members */
 	// ** THREAD HANDLING ** //
 	bool				_running;								//!< True when the thread is running
 	QMutex*				_mutex;									//!< Mutex used by the wait condition
+	bool 				_bufferUpdated;						    //!< Set to true when the input buffer is filled by the audio backend.
 	QWaitCondition*		_waitCond;								//!< Wait condition used to put the thread to sleep while waiting for audio samples
 
 	// ** TEMPORARY BUFFERS USED FOR VISUALIZATION ** //

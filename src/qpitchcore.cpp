@@ -27,6 +27,8 @@
 #include <QtDebug>
 #include <QWaitCondition>
 
+#include <print>
+
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
 	#include <cmath>
 #endif
@@ -248,11 +250,8 @@ int QPitchCore::paCallback( const void* input, void* /*output*/, unsigned long f
 
 int QPitchCore::paStoreInputBufferCallback( const short int* input, unsigned long frameCount )
 {
-    // ** TRY TO ACQUIRE THE SEMAPHORE ** //
-    if ( _mutex->tryLock( 1 ) ) {
-        // buffer has been locked
-        _mutex->unlock( );
-
+    QMutexLocker locker(_mutex);
+    if ( !_bufferUpdated ) {
         // ** COPY BUFFER ** //
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
         // ** USE THE REFERENCE SINE WAVE INPUT SIGNAL ** //
@@ -267,7 +266,11 @@ int QPitchCore::paStoreInputBufferCallback( const short int* input, unsigned lon
         memcpy( _buffer, input, frameCount * sizeof( short int ) );
 #endif
 
-        // ** REQUEST BUFFER RELEASE ** //
+		std::println("[paStoreInputBufferCallback] Buffer updated.  frameCount: {}", frameCount);
+
+		_bufferUpdated = true;
+
+        // Let the QPitchCore thread process the filled buffer.
         _waitCond->wakeOne( );
     } else {
         // buffer cannot be locked
@@ -295,14 +298,18 @@ void QPitchCore::run( )
 	// initialize the visualization status
 	_visualizationStatus = STOPPED;
 
+	QMutexLocker locker(_mutex);
 	forever {
+		// Wait until either the buffer is updated or _running is set to false.
+		_waitCond->wait( _mutex );
+
 		// lock the buffer
-		_mutex->lock( );
 		if ( _running == false ) {
-			_mutex->unlock( );
-				_visualizationStatus = STOPPED;
+			_visualizationStatus = STOPPED;
 			return;
 		}
+
+		Q_ASSERT(_bufferUpdated);
 
 		// ** PROCESS THE BUFFER AND SLEEP TILL THE NEXT FRAME ** //
 		// transfer the internal buffer to the external buffer and
@@ -394,9 +401,7 @@ void QPitchCore::run( )
 			_visualizationStatus = RUNNING;
 		}
 
-		// release the buffer and wait
-		_waitCond->wait( _mutex );
-		_mutex->unlock( );
+		_bufferUpdated = false;
 	}
 }
 
