@@ -145,17 +145,11 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
 		_drawBackground	= false;
 
 		// create a new pixmap with the right size
-		_pixmap	= QPixmap( size( ) );
-#ifdef Q_WS_X11
-		// do not use a trasparent background on X11 to avoid a **big** performance hit (on my machine...)
-		_pixmap.fill( palette( ).window( ).color( ) );
-#else
-		_pixmap.fill( Qt::transparent );
-#endif
+		_picture = QPicture();
 
 		// setup the painter
-		painter.begin( &_pixmap );
-        painter.setRenderHint(QPainter::Antialiasing);
+		painter.begin( &_picture );
+    	painter.setRenderHint(QPainter::Antialiasing);
 
 		// ** UPPER AXIS ** //
 		painter.translate( plotArea_sideMargin, plotArea_topMargin + plotArea_height );
@@ -183,8 +177,8 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
 
 	// ** DISPLAY THE OFFSCREEN BUFFER ** //
 	painter.begin( this );
-	painter.drawPixmap( 0, 0, _pixmap );
-        painter.setRenderHint(QPainter::Antialiasing);
+	painter.setRenderHint(QPainter::Antialiasing);
+	painter.drawPicture( 0, 0, _picture );
 
 	if ( _drawForeground == true ) {
 		// ** UPPER AXIS ** //
@@ -198,10 +192,8 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
 		// draw cursor
 		if ( (_estimatedFrequency >= 40.0) && (_estimatedFrequency <= 2000.0) ) {
 			painter.setPen( QPen( Qt::red, 0, Qt::SolidLine ) );
-			painter.setRenderHint( QPainter::Antialiasing, true );
 			painter.drawLine( QPointF( 40.0 / _estimatedFrequency * plotArea_width, -plotArea_height ),
 				QPointF( 40.0 / _estimatedFrequency * plotArea_width, plotArea_height - 1 ) );
-			painter.setRenderHint( QPainter::Antialiasing, false );
 		}
 	}
 

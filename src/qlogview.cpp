@@ -68,9 +68,6 @@ QLogView::QLogView( QWidget* parent ) : QWidget( parent )
 	_drawBackground			= true;
 	_drawForeground			= false;
 	_currentPitch			= -1;
-
-	// initialize the pixmap
-	_pixmap					= new QPixmap( );
 }
 
 
@@ -170,9 +167,6 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 {
 	fp.tick();
 
-	// ** ENSURE THAT THE PIXMAP IS VALID ** //
-	Q_ASSERT( _pixmap != NULL );
-
 	// ** INITIALIZE PAINTER ** //
 	QPainter	painter;
 	int			scaleWidth = (int)(width( ) * (1.0 - 2 * SIDE_MARGIN));
@@ -188,19 +182,12 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 		// do not redraw background next time
 		_drawBackground	= false;
 
-		// create a new pixmap with the right size
-		delete	_pixmap;
-		_pixmap	= new QPixmap( size( ) );
-
-#ifdef Q_WS_X11
-		// do not use a trasparent background on X11 to avoid a **big** performance hit (on my machine...)
-		_pixmap->fill( palette( ).window( ).color( ) );
-#else
-		_pixmap->fill( Qt::transparent );
-#endif
+		// create a new picture.
+		_picture = QPicture();
 
 		// setup the painter
-		painter.begin( _pixmap );
+		painter.begin( &_picture );
+    	painter.setRenderHint( QPainter::Antialiasing );
 		painter.translate( QPoint( (int)(width( ) * SIDE_MARGIN), height( ) / 2 ) );
 
 		// plot axis frame
@@ -250,7 +237,8 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 
 	// ** DISPLAY THE OFFSCREEN BUFFER ** //
 	painter.begin( this );
-	painter.drawPixmap( 0, 0, *_pixmap );
+    painter.setRenderHint( QPainter::Antialiasing );
+	painter.drawPicture( 0, 0, _picture );
 
 	if ( (_drawForeground == true) && (_currentPitch >= 0) ) {
 		// ** DRAW THE CURSOR IF REQUIRED ** //
@@ -266,13 +254,11 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 
 		if ( fabs( _currentPitchDeviation ) < ACCEPTED_DEVIATION ) {
 			// draw a square around the note when the error pitch is less than 2.5 percent
-			painter.setRenderHint( QPainter::Antialiasing, true );
 			painter.setPen( QPen( Qt::red, 0, Qt::SolidLine ) );
 			painter.drawRoundedRect( QRectF ( xTick - painter.fontMetrics( ).horizontalAdvance( NoteLabel[2 * _tuningNotation][_currentPitch] ) / 2.0 - CARET_BORDER,
 				-BAR_HEIGHT - painter.fontMetrics( ).ascent( ) - LABEL_OFFSET - CARET_BORDER,
 				painter.fontMetrics( ).horizontalAdvance( NoteLabel[2 * _tuningNotation][_currentPitch] ) + 2 * CARET_BORDER,
 				2 * ( BAR_HEIGHT + painter.fontMetrics( ).ascent( ) + LABEL_OFFSET + CARET_BORDER) ), 15, 15, Qt::RelativeSize );
-			painter.setRenderHint( QPainter::Antialiasing, false );
 		}
 
 		// highlight the current note
@@ -294,8 +280,6 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 
 		if ( _currentPitchDeviation < -ACCEPTED_DEVIATION ) {
 			// draw a right arrow if the pitch is lower than the reference
-			painter.setRenderHint( QPainter::Antialiasing, true );
-
 			QPolygon rightArrow;
 			rightArrow << QPoint( xCursor - CURSOR_WIDTH / 2, -BAR_HEIGHT + 1)
 				<< QPoint( xCursor - CURSOR_WIDTH / 2, BAR_HEIGHT)
@@ -307,12 +291,8 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 
 			painter.fillPath( path, cursorColor );
 			painter.drawPath( path );
-
-			painter.setRenderHint( QPainter::Antialiasing, false );
 		} else if ( _currentPitchDeviation > ACCEPTED_DEVIATION ) {
 			// draw a left arrow if the pitch is lower than the reference
-			painter.setRenderHint( QPainter::Antialiasing, true );
-
 			QPolygon rightArrow;
 			rightArrow << QPoint( xCursor + CURSOR_WIDTH / 2, -BAR_HEIGHT + 1)
 				<< QPoint( xCursor + CURSOR_WIDTH / 2, BAR_HEIGHT)
@@ -324,8 +304,6 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 
 			painter.fillPath( path, cursorColor );
 			painter.drawPath( path );
-
-			painter.setRenderHint( QPainter::Antialiasing, false );
 		} else {
 			// draw a rectangular cursor
 			painter.fillRect( xCursor - CURSOR_WIDTH / 2, -BAR_HEIGHT + 1, CURSOR_WIDTH, 2 * BAR_HEIGHT - 1, cursorColor );

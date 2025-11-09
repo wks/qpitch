@@ -36,6 +36,7 @@
 #define __QLOGVIEW_H_
 
 #include <QWidget>
+#include <QPicture>
 
 class QLogView : public QWidget {
 	Q_OBJECT
@@ -138,7 +139,7 @@ private: /* members */
 	// ** REPAINT FLAG **//
 	bool				_drawBackground;				//!< Redraw everything when true, otherwise redraw only the note scale
 	bool				_drawForeground;				//!< Draw the note cursor when true, otherwise draw nothing
-	QPixmap*			_pixmap;						//!< Pixmap used to store the background to reduce the load
+	QPicture			_picture;						//!< QPicture used to store the background to reduce the load
 };
 
 #endif /* __QLOGVIEW_H_ */
