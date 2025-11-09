@@ -102,8 +102,7 @@ private: /* members */
 	// ** STATUS BAR ITEMS ** //
 	QLabel				_sb_labelDeviceInfo;			//!< Label with the device information
 
-	// ** UPDATE TIMERS ** //
-	QTimer*				_hRepaintTimer;					//!< Support timer to trigger the repaint of children
+	// ** MISC UI PROPERTIES ** //
 	bool				_lineEditEnabled;				//!< Flag to disable the update of the frequency estimation
 	bool				_compactModeActivated;			//!< Flag to request a widget resize to the compact mode
 

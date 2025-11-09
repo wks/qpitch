@@ -75,9 +75,6 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 		tuningNotation = 0;
 	}
 
-	// ** SETUP PRIVATE ITEMS ** //
-	_hRepaintTimer = new QTimer( );
-
 	// ** REJECT MOUSE EVENT FOR QLINEEDIT ** //
 	_gt.lineEdit_note->installEventFilter( this );
 	_gt.lineEdit_frequency->installEventFilter( this );
@@ -120,9 +117,6 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 	connect( _gt.widget_qlogview, &QLogView::updateEstimatedNote,
 		this, &QPitch::setEstimatedNote);
 
-	connect( _hRepaintTimer, &QTimer::timeout,
-		this, &QPitch::updateQPitchGui);
-
 	// ** START PORTAUDIO STREAM ** //
 	try {
 		Q_ASSERT( _hQPitchCore != NULL );
@@ -142,20 +136,15 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 	Qt::WindowFlags flags = windowFlags( );
 	flags &= ~Qt::WindowMaximizeButtonHint;
 	setWindowFlags( flags );
-
-	// ** START REPAINT TIMER WITH 60 FPS REFRESH RATE ** //
-	_hRepaintTimer->start( 16 );
 }
 
 
 QPitch::~QPitch( )
 {
 	// ** ENSURE THAT THE DATA ARE VALID ** //
-	Q_ASSERT( _hRepaintTimer	!= NULL );
 	Q_ASSERT( _hQPitchCore	!= NULL );
 
 	// ** RELEASE RESOURCES ** //
-	delete _hRepaintTimer;
 	delete _hQPitchCore;
 }
 
@@ -183,11 +172,7 @@ void QPitch::setUpdateEnabled( bool enabled )
 void QPitch::closeEvent( QCloseEvent* /* event */ )
 {
 	// ** ENSURE THAT THE DATA ARE VALID ** //
-	Q_ASSERT( _hRepaintTimer	!= NULL );
 	Q_ASSERT( _hQPitchCore	!= NULL );
-
-	// ** STOP REFRESH ** //
-	_hRepaintTimer->stop( );
 
 	// ** STORE SETTINGS ** //
 	QSettings settings( "QPitch", "QPitch" );
@@ -229,7 +214,6 @@ bool QPitch::eventFilter( QObject* watched, QEvent* event )
 void QPitch::showPreferencesDialog( )
 {
 	// ** ENSURE THAT THE DATA ARE VALID ** //
-	Q_ASSERT( _hRepaintTimer	!= NULL );
 	Q_ASSERT( _hQPitchCore	!= NULL );
 
 	// ** GET CURRENT PROPERTIES ** //
@@ -321,5 +305,7 @@ void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
 		_gt.widget_qosziview->setPlotSamples(visData->plotSample.data(), visData->timeRangeSample);
 		_gt.widget_qosziview->setPlotAutoCorr(visData->plotAutoCorr.data(), visData->estimatedFrequency);
 		_gt.widget_qlogview->setEstimatedFrequency(visData->estimatedFrequency);
+		setEstimatedFrequency(visData->estimatedFrequency);
 	}
+	updateQPitchGui();
 }
