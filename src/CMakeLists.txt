@@ -20,6 +20,7 @@ add_executable( qpitch
 	qpitchcore.cpp
 	qsettingsdlg.cpp
 	fpsprofiler.cpp
+	visualization_data.cpp
 
 	qaboutdlg.h
 	qlogview.h
@@ -28,6 +29,7 @@ add_executable( qpitch
 	qpitch.h
 	qsettingsdlg.h
 	fpsprofiler.h
+	visualization_data.h
 
 	ui/qpitch.qrc
 

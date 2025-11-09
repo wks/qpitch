@@ -40,7 +40,8 @@ const int QPitchCore::SIGNAL_THRESHOLD_ON	= 100;
 const int QPitchCore::SIGNAL_THRESHOLD_OFF	= 20;
 
 
-QPitchCore::QPitchCore( const unsigned int plotPlot_size, QObject* parent ) : QThread( parent )
+QPitchCore::QPitchCore( const unsigned int plotPlot_size, QObject* parent ) : QThread( parent ),
+	_visualizationData(plotPlot_size)
 {
 	// ** INITIALIZE PRIVATE VARIABLES ** //
 	_mutex			= new QMutex( );
@@ -51,11 +52,6 @@ QPitchCore::QPitchCore( const unsigned int plotPlot_size, QObject* parent ) : QT
 	_fftw_plan_IFFT	= NULL;
 	_fftw_in_time	= NULL;
 	_fftw_out_freq 	= NULL;
-
-	// ** INITIALIZE TEMPORARY BUFFERS ** //
-	_plotData_size	= plotPlot_size;
-	_plotSample		= new double[plotPlot_size];
-	_plotAutoCorr	= new double[plotPlot_size];
 
 	// ** INITIALIZE PORTAUDIO ** //
 	PaError err = Pa_Initialize( );
@@ -71,8 +67,6 @@ QPitchCore::~QPitchCore( )
 	Q_ASSERT( _stream		== NULL );
 	Q_ASSERT( _mutex		!= NULL );
 	Q_ASSERT( _waitCond		!= NULL );
-	Q_ASSERT( _plotSample	!= NULL );
-	Q_ASSERT( _plotAutoCorr	!= NULL );
 	Q_ASSERT( _running		== false );
 	Q_ASSERT( ! this->isRunning( ) );
 
@@ -82,8 +76,6 @@ QPitchCore::~QPitchCore( )
 	// ** RELEASE RESOURCES ** //
 	delete		_mutex;
 	delete		_waitCond;
-	delete[]	_plotSample;
-	delete[]	_plotAutoCorr;
 }
 
 
@@ -292,8 +284,6 @@ void QPitchCore::run( )
 	Q_ASSERT( _fftw_out_freq	!= NULL );
 	Q_ASSERT( _fftw_in_time		!= NULL );
 	Q_ASSERT( _fftw_out_freq	!= NULL );
-	Q_ASSERT( _plotSample		!= NULL );
-	Q_ASSERT( _plotAutoCorr		!= NULL );
 
 	// initialize the visualization status
 	_visualizationStatus = STOPPED;
@@ -363,18 +353,18 @@ void QPitchCore::run( )
 					fftw_in_downsampleFactor = 2;
 				}
 
-				for ( unsigned int k = 0 ; k < _plotData_size ; ++k ) {
+				for ( unsigned int k = 0 ; k < _visualizationData.plotData_size ; ++k ) {
 					Q_ASSERT( (k * fftw_in_downsampleFactor) < (_fftw_in_time_size) );
-					_plotSample[k] = _fftw_in_time[k * fftw_in_downsampleFactor];
+					_visualizationData.plotSample[k] = _fftw_in_time[k * fftw_in_downsampleFactor];
 				}
-				emit updatePlotSamples( _plotSample, _fftw_in_time_size / _sampleFrequency );
+				emit updatePlotSamples( &_visualizationData.plotSample[0], _fftw_in_time_size / _sampleFrequency );
 
 				// reset the index in the external buffer
 				_fftw_in_time_index = 0;
 
 				// compute the autocorrelation and find the best matching frequency
-				double estimatedFrequency = fftw_pitchDetectionAlgorithm( );
-				emit updateEstimatedFrequency( estimatedFrequency );
+				_visualizationData.estimatedFrequency = fftw_pitchDetectionAlgorithm( );
+				emit updateEstimatedFrequency( _visualizationData.estimatedFrequency );
 
 				// extract autocorrelation samples for the oscilloscope view in the range [40, 1000] Hz --> [0, 25] msec
 				unsigned int fftw_out_downsampleFactor;
@@ -384,11 +374,11 @@ void QPitchCore::run( )
 					fftw_out_downsampleFactor = 1 * ZERO_PADDING_FACTOR;
 				}
 
-				for ( unsigned int k = 0 ; k < _plotData_size ; ++k ) {
+				for ( unsigned int k = 0 ; k < _visualizationData.plotData_size ; ++k ) {
 					Q_ASSERT( (k * fftw_out_downsampleFactor) < (ZERO_PADDING_FACTOR * _fftw_in_time_size) );
-					_plotAutoCorr[k] = _fftw_in_time[k * fftw_out_downsampleFactor];
+					_visualizationData.plotAutoCorr[k] = _fftw_in_time[k * fftw_out_downsampleFactor];
 				}
-				emit updatePlotAutoCorr( _plotAutoCorr, estimatedFrequency );
+				emit updatePlotAutoCorr( &_visualizationData.plotAutoCorr[0], _visualizationData.estimatedFrequency );
 			}
 		}
 

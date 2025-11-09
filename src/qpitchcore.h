@@ -23,6 +23,8 @@
 #ifndef __QPITCHCORE_H_
 #define __QPITCHCORE_H_
 
+#include "visualization_data.h"
+
 //! Definition used to feed the application with a reference squarewave
 //#define _REFERENCE_SQUAREWAVE_INPUT
 
@@ -213,9 +215,7 @@ private: /* members */
 	QWaitCondition*		_waitCond;								//!< Wait condition used to put the thread to sleep while waiting for audio samples
 
 	// ** TEMPORARY BUFFERS USED FOR VISUALIZATION ** //
-	double*				_plotSample;							//!< Buffer used to store time samples used for visualization
-	double*				_plotAutoCorr;							//!< Buffer used to store autocorrelation samples used for visualization
-	unsigned int		_plotData_size;							//!< Total number of samples used for visualization
+	VisualizationData   _visualizationData;						//!< Visualization data shared with the UI thread
 	VisualizationStatus	_visualizationStatus;					//!< Visualization status used to handle silence
 
 private: /* methods */
