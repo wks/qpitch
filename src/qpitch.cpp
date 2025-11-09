@@ -93,42 +93,42 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 
 	// ** SETUP THE CONNECTIONS ** //
 	// File menu
-	connect( _gt.action_preferences, SIGNAL( triggered() ),
-		this, SLOT( showPreferencesDialog() ) );
-	connect( _gt.action_compactView, SIGNAL( triggered(bool) ),
-		this, SLOT( setViewCompactMode(bool) ) );
+	connect( _gt.action_preferences, &QAction::triggered,
+		this, &QPitch::showPreferencesDialog);
+	connect( _gt.action_compactView, &QAction::triggered,
+		this, &QPitch::setViewCompactMode);
 
 	// Help menu
-	connect( _gt.action_about, SIGNAL( triggered() ),
-		this, SLOT( showAboutDialog() ) );
-	connect( _gt.action_aboutQt, SIGNAL( triggered() ),
-		qApp, SLOT( aboutQt() ) );
+	connect( _gt.action_about, &QAction::triggered,
+		this, &QPitch::showAboutDialog);
+	connect( _gt.action_aboutQt, &QAction::triggered,
+		qApp, &QApplication::aboutQt);
 
 	// Internal connections
-	connect( _hQPitchCore, SIGNAL( updatePlotSamples(const double*, double) ),
-		_gt.widget_qosziview, SLOT( setPlotSamples(const double*, double) ) );
-	connect( _hQPitchCore, SIGNAL( updatePlotAutoCorr(const double*, double) ),
-		_gt.widget_qosziview, SLOT( setPlotAutoCorr(const double*, double) ) );
-	connect( _hQPitchCore, SIGNAL( updateSignalPresence( bool ) ),
-		_gt.widget_qosziview, SLOT( setPlotEnabled(bool) ) );
+	connect( _hQPitchCore, &QPitchCore::updatePlotSamples,
+		_gt.widget_qosziview, &QOsziView::setPlotSamples);
+	connect( _hQPitchCore, &QPitchCore::updatePlotAutoCorr,
+		_gt.widget_qosziview, &QOsziView::setPlotAutoCorr);
+	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
+		_gt.widget_qosziview, &QOsziView::setPlotEnabled);
 
-	connect( _hQPitchCore, SIGNAL( updateEstimatedFrequency(double) ),
-		_gt.widget_qlogview, SLOT( setEstimatedFrequency(double) ) );
-	connect( _hQPitchCore, SIGNAL( updateEstimatedFrequency(double) ),
-		_gt.widget_qlogview, SLOT( setEstimatedFrequency(double) ) );
-	connect( _hQPitchCore, SIGNAL( updateSignalPresence( bool ) ),
-		_gt.widget_qlogview, SLOT( setPlotEnabled(bool) ) );
+	connect( _hQPitchCore, &QPitchCore::updateEstimatedFrequency,
+		_gt.widget_qlogview, &QLogView::setEstimatedFrequency);
+	connect( _hQPitchCore, &QPitchCore::updateEstimatedFrequency,
+		_gt.widget_qlogview, &QLogView::setEstimatedFrequency);
+	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
+		_gt.widget_qlogview, &QLogView::setPlotEnabled);
 
-	connect( _hQPitchCore, SIGNAL( updateEstimatedFrequency(double) ),
-		this, SLOT( setEstimatedFrequency(double) ) );
-	connect( _hQPitchCore, SIGNAL( updateSignalPresence( bool ) ),
-		this, SLOT( setUpdateEnabled(bool) ) );
+	connect( _hQPitchCore, &QPitchCore::updateEstimatedFrequency,
+		this, &QPitch::setEstimatedFrequency);
+	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
+		this, &QPitch::setUpdateEnabled);
 
-	connect( _gt.widget_qlogview, SIGNAL( updateEstimatedNote(double) ),
-		this, SLOT( setEstimatedNote(double) ) );
+	connect( _gt.widget_qlogview, &QLogView::updateEstimatedNote,
+		this, &QPitch::setEstimatedNote);
 
-	connect( _hRepaintTimer, SIGNAL( timeout() ),
-		this, SLOT( updateQPitchGui() ) );
+	connect( _hRepaintTimer, &QTimer::timeout,
+		this, &QPitch::updateQPitchGui);
 
 	// ** START PORTAUDIO STREAM ** //
 	try {
@@ -246,8 +246,8 @@ void QPitch::showPreferencesDialog( )
 
 	// ** SHOW PREFERENCES DIALOG ** //
 	QSettingsDlg as( param, this );
-	connect( &as, SIGNAL( updateApplicationSettings(unsigned int, unsigned int, double, unsigned int) ),
-		this, SLOT( setApplicationSettings(unsigned int, unsigned int, double, unsigned int) ) );
+	connect( &as, &QSettingsDlg::updateApplicationSettings,
+		this, &QPitch::setApplicationSettings);
 	as.exec( );
 }
 

@@ -22,6 +22,7 @@
 
 #include "qsettingsdlg.h"
 
+#include <QPushButton>
 
 QSettingsDlg::QSettingsDlg( const QPitchParameters& qPitchParameters, QWidget* parent ) : QDialog( parent )
 {
@@ -29,10 +30,10 @@ QSettingsDlg::QSettingsDlg( const QPitchParameters& qPitchParameters, QWidget* p
 	_sd.setupUi( this );
 
 	// ** SETUP CONNECTIONS ** //
-	connect( _sd.buttonBox, SIGNAL( accepted() ),
-		this, SLOT( acceptSettings() ) );
-	connect( (QObject*) _sd.buttonBox->button( QDialogButtonBox::RestoreDefaults ), SIGNAL( pressed() ),
-		this, SLOT( restoreDefaultSettings() ) );
+	connect( _sd.buttonBox, &QDialogButtonBox::accepted,
+		this, &QSettingsDlg::acceptSettings);
+	connect( _sd.buttonBox->button( QDialogButtonBox::RestoreDefaults ), &QPushButton::pressed,
+		this, &QSettingsDlg::restoreDefaultSettings);
 
 	// ** INITIALIZE WIDGETS ** //
 	_sd.comboBox_sampleFrequency->setCurrentIndex( _sd.comboBox_sampleFrequency->findText( QString::number( qPitchParameters.sampleFrequency ) ) );
