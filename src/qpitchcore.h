@@ -146,32 +146,16 @@ public: /* methods */
     int paStoreInputBufferCallback( const short int* output, unsigned long frameCount );
 
 signals:
-	//! Request an update in the audio stream signal graph.
+	//! Emitted when any part of the visualization data is updated.
 	/*!
-	 * \param[in] osziSample the array with the new samples of the input signal to display
-	 * \param[in] osziSample_timeRange the time range used to place the tick marks on the x-axis
+	 * \param[in] visData a reference to the VisualizationData struct
 	 */
-	void updatePlotSamples( const double* osziSample, double osziSample_timeRange );
+	void visualizationDataUpdated(VisualizationData *visData);	//! Signal the level of the input signal.
 
-	//! Request an update in the autocorrelation graph.
-	/*!
-	 * \param[in] osziAutoCorr the array with the new samples of the autocorrelation to display
- 	 * \param[in] estimatedFrequency the value of the signal frequency estimated as the maximum of the autocorrelation
-	 */
-	void updatePlotAutoCorr( const double* osziAutoCorr, double estimatedFrequency );
-
-	//! Request an update in the displayed value of the estimated frequency.
-	/*!
-	 * \param[in] estimatedFrequency the value of the signal frequency estimated as the maximum of the autocorrelation
-	 */
-	void updateEstimatedFrequency( double estimatedFrequency );
-
-	//! Signal the level of the input signal.
 	/*!
 	 * \param[in] signalPresent flag with the current signal presence
 	 */
 	void updateSignalPresence( bool signalPresent );
-
 
 protected:
 	//! Main loop of the thread.

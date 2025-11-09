@@ -24,6 +24,7 @@
 #define __QPITCH_H_
 
 #include "ui_qpitch.h"
+#include "visualization_data.h"
 
 #include <QMainWindow>
 
@@ -135,6 +136,9 @@ private slots:
 
 	//! Update all the elements in the GUI.
 	void updateQPitchGui( );
+
+	//! Handle updated VisualizationData
+	void onVisualizationDataUpdated(VisualizationData *visData);
 };
 
 #endif /* __QPITCH_H_ */

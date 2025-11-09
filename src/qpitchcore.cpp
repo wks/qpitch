@@ -301,6 +301,8 @@ void QPitchCore::run( )
 
 		Q_ASSERT(_bufferUpdated);
 
+		std::println("******************* buffer updated! ******************");
+
 		// ** PROCESS THE BUFFER AND SLEEP TILL THE NEXT FRAME ** //
 		// transfer the internal buffer to the external buffer and
 		// drop all the samples that exceed its length
@@ -353,18 +355,20 @@ void QPitchCore::run( )
 					fftw_in_downsampleFactor = 2;
 				}
 
+				QMutexLocker visDataLocker(&_visualizationData.mutex);
+
 				for ( unsigned int k = 0 ; k < _visualizationData.plotData_size ; ++k ) {
 					Q_ASSERT( (k * fftw_in_downsampleFactor) < (_fftw_in_time_size) );
 					_visualizationData.plotSample[k] = _fftw_in_time[k * fftw_in_downsampleFactor];
 				}
-				emit updatePlotSamples( &_visualizationData.plotSample[0], _fftw_in_time_size / _sampleFrequency );
+
+				_visualizationData.timeRangeSample = _fftw_in_time_size / _sampleFrequency;
 
 				// reset the index in the external buffer
 				_fftw_in_time_index = 0;
 
 				// compute the autocorrelation and find the best matching frequency
 				_visualizationData.estimatedFrequency = fftw_pitchDetectionAlgorithm( );
-				emit updateEstimatedFrequency( _visualizationData.estimatedFrequency );
 
 				// extract autocorrelation samples for the oscilloscope view in the range [40, 1000] Hz --> [0, 25] msec
 				unsigned int fftw_out_downsampleFactor;
@@ -378,7 +382,9 @@ void QPitchCore::run( )
 					Q_ASSERT( (k * fftw_out_downsampleFactor) < (ZERO_PADDING_FACTOR * _fftw_in_time_size) );
 					_visualizationData.plotAutoCorr[k] = _fftw_in_time[k * fftw_out_downsampleFactor];
 				}
-				emit updatePlotAutoCorr( &_visualizationData.plotAutoCorr[0], _visualizationData.estimatedFrequency );
+
+				std::println("Emitting visualizationDataUpdated...");
+				emit visualizationDataUpdated(&_visualizationData);
 			}
 		}
 

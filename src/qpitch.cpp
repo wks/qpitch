@@ -30,6 +30,8 @@
 #include <QSettings>
 #include <QTimer>
 
+#include <print>
+
 // ** CONSTANTS ** //
 const int QPitch::PLOT_BUFFER_SIZE = 551;		// 44100 * 0.05 / 4 = 551.25
 													// size computed to have a time range of 50 ms with an integer downsample ratio
@@ -105,22 +107,13 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 		qApp, &QApplication::aboutQt);
 
 	// Internal connections
-	connect( _hQPitchCore, &QPitchCore::updatePlotSamples,
-		_gt.widget_qosziview, &QOsziView::setPlotSamples);
-	connect( _hQPitchCore, &QPitchCore::updatePlotAutoCorr,
-		_gt.widget_qosziview, &QOsziView::setPlotAutoCorr);
+	connect( _hQPitchCore, &QPitchCore::visualizationDataUpdated,
+		this, &QPitch::onVisualizationDataUpdated);
+
 	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
 		_gt.widget_qosziview, &QOsziView::setPlotEnabled);
-
-	connect( _hQPitchCore, &QPitchCore::updateEstimatedFrequency,
-		_gt.widget_qlogview, &QLogView::setEstimatedFrequency);
-	connect( _hQPitchCore, &QPitchCore::updateEstimatedFrequency,
-		_gt.widget_qlogview, &QLogView::setEstimatedFrequency);
 	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
 		_gt.widget_qlogview, &QLogView::setPlotEnabled);
-
-	connect( _hQPitchCore, &QPitchCore::updateEstimatedFrequency,
-		this, &QPitch::setEstimatedFrequency);
 	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
 		this, &QPitch::setUpdateEnabled);
 
@@ -321,5 +314,12 @@ void QPitch::updateQPitchGui( )
 	}
 }
 
-
-
+void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
+	std::println("============= onVisualizationDataUpdated==============");
+	{
+		QMutexLocker visDataLocker(&visData->mutex);
+		_gt.widget_qosziview->setPlotSamples(visData->plotSample.data(), visData->timeRangeSample);
+		_gt.widget_qosziview->setPlotAutoCorr(visData->plotAutoCorr.data(), visData->estimatedFrequency);
+		_gt.widget_qlogview->setEstimatedFrequency(visData->estimatedFrequency);
+	}
+}
