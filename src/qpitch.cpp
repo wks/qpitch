@@ -25,6 +25,7 @@
 #include "qaboutdlg.h"
 #include "qsettingsdlg.h"
 #include "qpitchcore.h"
+#include "fpsprofiler.h"
 
 #include <QSettings>
 #include <QTimer>
@@ -295,6 +296,9 @@ void QPitch::setViewCompactMode( bool enabled )
 
 void QPitch::updateQPitchGui( )
 {
+	static FPSProfiler fp("updateQPitchGui");
+	fp.tick();
+
 	// ** UPDATE WIDGETS ** //
 	_gt.widget_qosziview->update( );
 	_gt.widget_qlogview->update( );

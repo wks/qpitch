@@ -19,6 +19,7 @@ add_executable( qpitch
 	qpitch.cpp
 	qpitchcore.cpp
 	qsettingsdlg.cpp
+	fpsprofiler.cpp
 
 	qaboutdlg.h
 	qlogview.h
@@ -26,6 +27,7 @@ add_executable( qpitch
 	qpitchcore.h
 	qpitch.h
 	qsettingsdlg.h
+	fpsprofiler.h
 
 	ui/qpitch.qrc
 
@@ -35,7 +37,6 @@ add_executable( qpitch
 )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
 
 # add library dependencies needed by the executable (variables are filled
 # by FIND_PACKAGE)

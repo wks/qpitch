@@ -22,10 +22,14 @@
 
 #include "qosziview.h"
 
+#include "fpsprofiler.h"
+
 #include <cmath>
 
 #include <QPainter>
 #include <iostream>
+
+static FPSProfiler fp("osziview");
 
 // ** CUSTOM CONSTANTS ** //
 const double	QOsziView::SIDE_MARGIN			= 0.01;
@@ -87,6 +91,9 @@ void QOsziView::setPlotEnabled( bool enabled )
 
 void QOsziView::setPlotSamples( const double* plotSample, double timeRangeSample )
 {
+	static FPSProfiler fp("setPlotSamples");
+	fp.tick();
+
 	// ** ENSURE THAT THE BUFFERS ARE VALID ** //
 	Q_ASSERT( plotSample		!= NULL );
 	Q_ASSERT( _plotSample		!= NULL );
@@ -100,6 +107,9 @@ void QOsziView::setPlotSamples( const double* plotSample, double timeRangeSample
 
 void QOsziView::setPlotAutoCorr( const double* plotAutoCorr, double estimatedFrequency )
 {
+	static FPSProfiler fp("setPlotAutoCorr");
+	fp.tick();
+
 	// ** ENSURE THAT THE BUFFERS ARE VALID ** //
 	Q_ASSERT( plotAutoCorr		!= NULL );
 	Q_ASSERT( _plotAutoCorr		!= NULL );
@@ -113,6 +123,8 @@ void QOsziView::setPlotAutoCorr( const double* plotAutoCorr, double estimatedFre
 
 void QOsziView::paintEvent( QPaintEvent* /* event */ )
 {
+	fp.tick();
+
 	// ** ENSURE THAT THE BUFFERS ARE VALID ** //
 	Q_ASSERT( _plotSample		!= NULL );
 	Q_ASSERT( _plotAutoCorr		!= NULL );
@@ -192,6 +204,8 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
 			painter.setRenderHint( QPainter::Antialiasing, false );
 		}
 	}
+
+	painter.drawText(0, 0, QString("fps: %1").arg(fp.get_fps()));
 }
 
 

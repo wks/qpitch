@@ -10,6 +10,8 @@ cmake_minimum_required( VERSION 4.1 )
 
 project(qpitch)
 
+set(CMAKE_CXX_STANDARD 23)
+
 include(GNUInstallDirs)
 
 # set path for additional cmake modules
