@@ -113,9 +113,13 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 		_gt.widget_qlogview, &QLogView::setPlotEnabled);
 	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
 		this, &QPitch::setUpdateEnabled);
+	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
+		_gt.widget_freqDiff, &FreqDiffView::setSignalPresent);
 
 	connect( _gt.widget_qlogview, &QLogView::updateEstimatedNote,
 		this, &QPitch::setEstimatedNote);
+	connect( _gt.widget_qlogview, &QLogView::updateEstimatedNote,
+		_gt.widget_freqDiff, &FreqDiffView::setEstimatedNote);
 
 	// ** START PORTAUDIO STREAM ** //
 	try {
@@ -276,6 +280,7 @@ void QPitch::updateQPitchGui( )
 	// ** UPDATE WIDGETS ** //
 	_gt.widget_qosziview->update( );
 	_gt.widget_qlogview->update( );
+	_gt.widget_freqDiff->update();
 
 	if ( _lineEditEnabled == true ) {
 		// ** UPDATE LABELS ** //
@@ -303,6 +308,7 @@ void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
 		_gt.widget_qosziview->setPlotAutoCorr(visData->plotAutoCorr.data(), visData->estimatedFrequency);
 		_gt.widget_qlogview->setEstimatedFrequency(visData->estimatedFrequency);
 		setEstimatedFrequency(visData->estimatedFrequency);
+		_gt.widget_freqDiff->setEstimatedFrequency(visData->estimatedFrequency);
 	}
 	updateQPitchGui();
 }
