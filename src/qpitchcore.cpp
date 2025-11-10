@@ -25,7 +25,7 @@
 #include <QMessageBox>
 #include <QMutex>
 #include <QtDebug>
-#include <QWaitCondition>
+#include <QMutexLocker>
 
 #include <print>
 
@@ -40,14 +40,11 @@ const int QPitchCore::SIGNAL_THRESHOLD_ON	= 100;
 const int QPitchCore::SIGNAL_THRESHOLD_OFF	= 20;
 
 
-QPitchCore::QPitchCore( const unsigned int plotPlot_size, QObject* parent ) : QThread( parent ),
+QPitchCore::QPitchCore( QObject* parent, const unsigned int plotPlot_size ) : QThread( parent ),
 	_visualizationData(plotPlot_size)
 {
 	// ** INITIALIZE PRIVATE VARIABLES ** //
-	_mutex			= new QMutex( );
-	_waitCond		= new QWaitCondition( );
 	_stream			= NULL;
-	_buffer			= NULL;
 	_fftw_plan_FFT	= NULL;
 	_fftw_plan_IFFT	= NULL;
 	_fftw_in_time	= NULL;
@@ -65,8 +62,6 @@ QPitchCore::~QPitchCore( )
 {
 	// ** ENSURE THAT THE STREAM IS STOPPED AND THE THREAD NOT RUNNING ** //
 	Q_ASSERT( _stream		== NULL );
-	Q_ASSERT( _mutex		!= NULL );
-	Q_ASSERT( _waitCond		!= NULL );
 	Q_ASSERT( _running		== false );
 	Q_ASSERT( ! this->isRunning( ) );
 
@@ -74,8 +69,6 @@ QPitchCore::~QPitchCore( )
 	Pa_Terminate( );
 
 	// ** RELEASE RESOURCES ** //
-	delete		_mutex;
-	delete		_waitCond;
 }
 
 
@@ -83,7 +76,6 @@ void QPitchCore::startStream( const unsigned int sampleFrequency, const unsigned
 {
 	// ** ENSURE THAT THE STREAM IS STOPPED AND THE THREAD IS NOT RUNNING ** //
 	Q_ASSERT( _stream == NULL );
-	Q_ASSERT( _buffer == NULL );
 	Q_ASSERT( ! this->isRunning( ) );
 
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
@@ -132,7 +124,8 @@ void QPitchCore::startStream( const unsigned int sampleFrequency, const unsigned
 	}
 
 	// ** INITIALIZE BUFFERS ** //
-	_buffer 			= new short int[_buffer_size];
+	_buffer.clear();
+	_buffer.resize(_buffer_size);
 	_fftw_in_time_size 	= fftFrameSize;			// size of the external buffer (default 2048)
 	_fftw_in_time_index	= 0;
 
@@ -154,7 +147,6 @@ void QPitchCore::startStream( const unsigned int sampleFrequency, const unsigned
 
 	// ** ENSURE THAT THE STREAM IS STARTED AND THE THREAD IS RUNNING ** //
 	Q_ASSERT( _stream != NULL );
-	Q_ASSERT( _buffer != NULL );
 	Q_ASSERT( this->isRunning( ) );
 
 	qDebug( ) << "QPitchCore::startStream";
@@ -169,16 +161,16 @@ void QPitchCore::stopStream( )
 {
 	// ** ENSURE THAT THE STREAM IS STARTED ** //
 	Q_ASSERT( _stream			!= NULL );
-	Q_ASSERT( _buffer			!= NULL );
 	Q_ASSERT( _fftw_plan_FFT	!= NULL );
 	Q_ASSERT( _fftw_plan_IFFT 	!= NULL );
 	Q_ASSERT( _fftw_in_time		!= NULL );
 	Q_ASSERT( _fftw_out_freq	!= NULL );
 
 	// ** STOP THE THREAD ** //
-	_mutex->lock( );
-	_running = false;
-	_mutex->unlock( );
+	{
+		QMutexLocker locker(&_mutex);
+		_running = false;
+	}
 
 	// ** STOP PORTAUDIO STREAM ** //
 	PaError err = Pa_StopStream( _stream );
@@ -199,8 +191,6 @@ void QPitchCore::stopStream( )
 	fftw_free( _fftw_out_freq );
 
 	// ** RELEASE RESOURCES ** //
-	delete[] _buffer;
-	_buffer			= NULL;
 	_stream			= NULL;
 	_fftw_plan_FFT	= NULL;
 	_fftw_plan_FFT	= NULL;
@@ -237,12 +227,12 @@ int QPitchCore::paCallback( const void* input, void* /*output*/, unsigned long f
 	Q_ASSERT( input		!= NULL );
 	Q_ASSERT( userData	!= NULL );
 
-    return( static_cast<QPitchCore*>( userData )->paStoreInputBufferCallback( (const short int*)input, frameCount ) );
+    return( static_cast<QPitchCore*>( userData )->paStoreInputBufferCallback( (const int16_t*)input, frameCount ) );
 }
 
-int QPitchCore::paStoreInputBufferCallback( const short int* input, unsigned long frameCount )
+int QPitchCore::paStoreInputBufferCallback( const int16_t* input, unsigned long frameCount )
 {
-    QMutexLocker locker(_mutex);
+    QMutexLocker locker(&_mutex);
     if ( !_bufferUpdated ) {
         // ** COPY BUFFER ** //
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
@@ -255,7 +245,7 @@ int QPitchCore::paStoreInputBufferCallback( const short int* input, unsigned lon
         }
 #else
         // ** READ THE REAL AUDIO SIGNAL ** //
-        memcpy( _buffer, input, frameCount * sizeof( short int ) );
+        memcpy( _buffer.data(), input, frameCount * sizeof( int16_t ) );
 #endif
 
 		std::println("[paStoreInputBufferCallback] Buffer updated.  frameCount: {}", frameCount);
@@ -263,7 +253,7 @@ int QPitchCore::paStoreInputBufferCallback( const short int* input, unsigned lon
 		_bufferUpdated = true;
 
         // Let the QPitchCore thread process the filled buffer.
-        _waitCond->wakeOne( );
+        _waitCond.wakeOne( );
     } else {
         // buffer cannot be locked
         std::cerr << "QPitch: buffer full, dropping " << frameCount << " samples!\n";
@@ -288,10 +278,10 @@ void QPitchCore::run( )
 	// initialize the visualization status
 	_visualizationStatus = STOPPED;
 
-	QMutexLocker locker(_mutex);
+	QMutexLocker locker(&_mutex);
 	forever {
 		// Wait until either the buffer is updated or _running is set to false.
-		_waitCond->wait( _mutex );
+		_waitCond.wait( &_mutex );
 
 		// lock the buffer
 		if ( _running == false ) {

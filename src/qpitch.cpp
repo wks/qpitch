@@ -81,7 +81,7 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 
 	// ** INTIALIZE PORTAUDIO STREAM ** //
 	try {
-		_hQPitchCore = new QPitchCore( PLOT_BUFFER_SIZE );
+		_hQPitchCore = new QPitchCore( this, PLOT_BUFFER_SIZE );
 	} catch ( QPaSoundInputException& e ) {
 		e.report( );
 	}
@@ -143,9 +143,6 @@ QPitch::~QPitch( )
 {
 	// ** ENSURE THAT THE DATA ARE VALID ** //
 	Q_ASSERT( _hQPitchCore	!= NULL );
-
-	// ** RELEASE RESOURCES ** //
-	delete _hQPitchCore;
 }
 
 

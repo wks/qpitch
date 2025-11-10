@@ -51,34 +51,24 @@ QOsziView::QOsziView( QWidget* parent ) : QWidget( parent )
 
 	//** INITIALIZE BUFFERS ** //
 	_plotBuffer_size		= 0;					// empty buffers
-	_plotSample				= NULL;
-	_plotAutoCorr			= NULL;
 }
 
 
 QOsziView::~QOsziView()
 {
 	// ** RELEASE RESOURCES ** //
-	delete[] _plotSample;
-	delete[] _plotAutoCorr;
 }
 
 
 void QOsziView::setBufferSize( const unsigned int plotBuffer_size )
 {
-	// ** DELETE OLD BUFFERS ** //
-	delete[] _plotSample;
-	delete[] _plotAutoCorr;
-
 	//** INITIALIZE BUFFERS ** //
 	_plotBuffer_size	= plotBuffer_size;
-	_plotSample			= new double[_plotBuffer_size];
-	_plotAutoCorr		= new double[_plotBuffer_size];
+	_plotSample.clear();
+	_plotSample.resize(plotBuffer_size);
+	_plotAutoCorr.clear();
+	_plotAutoCorr.resize(plotBuffer_size);
 	_estimatedFrequency	= 0.0;
-
-	// ** CLEAR BUFFERS ** //
-	memset( _plotSample, 0, sizeof( double ) * _plotBuffer_size );
-	memset( _plotAutoCorr, 0, sizeof( double ) * _plotBuffer_size );
 }
 
 
@@ -95,12 +85,10 @@ void QOsziView::setPlotSamples( const double* plotSample, double timeRangeSample
 	fp.tick();
 
 	// ** ENSURE THAT THE BUFFERS ARE VALID ** //
-	Q_ASSERT( plotSample		!= NULL );
-	Q_ASSERT( _plotSample		!= NULL );
 	Q_ASSERT( _plotBuffer_size	!= 0 );
 
 	// ** STORE SIGNAL ** //
-	memcpy( _plotSample, plotSample, _plotBuffer_size * sizeof( double ) );
+	memcpy( _plotSample.data(), plotSample, _plotBuffer_size * sizeof( double ) );
 	_timeRangeSample = timeRangeSample;
 }
 
@@ -111,12 +99,10 @@ void QOsziView::setPlotAutoCorr( const double* plotAutoCorr, double estimatedFre
 	fp.tick();
 
 	// ** ENSURE THAT THE BUFFERS ARE VALID ** //
-	Q_ASSERT( plotAutoCorr		!= NULL );
-	Q_ASSERT( _plotAutoCorr		!= NULL );
 	Q_ASSERT( _plotBuffer_size	!= 0 );
 
 	// ** STORE AUTOCORRELATION ** //
-	memcpy( _plotAutoCorr, plotAutoCorr, _plotBuffer_size * sizeof( double ) );
+	memcpy( _plotAutoCorr.data(), plotAutoCorr, _plotBuffer_size * sizeof( double ) );
 	_estimatedFrequency	= estimatedFrequency;
 }
 
@@ -126,8 +112,6 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
 	fp.tick();
 
 	// ** ENSURE THAT THE BUFFERS ARE VALID ** //
-	Q_ASSERT( _plotSample		!= NULL );
-	Q_ASSERT( _plotAutoCorr		!= NULL );
 	Q_ASSERT( _plotBuffer_size	!= 0 );
 
 	// ** INITIALIZE PAINTER ** //
@@ -183,11 +167,11 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
 	if ( _drawForeground == true ) {
 		// ** UPPER AXIS ** //
 		painter.translate( plotArea_sideMargin, plotArea_topMargin + plotArea_height );
-		drawCurve( painter, _plotSample, _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkGreen, 2048.0 );
+		drawCurve( painter, _plotSample.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkGreen, 2048.0 );
 
 		// ** LOWER AXIS ** //
 		painter.translate( 0, 2 * (plotArea_topMargin + plotArea_height) );
-		drawCurve( painter, _plotAutoCorr, _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkBlue, 0 );
+		drawCurve( painter, _plotAutoCorr.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkBlue, 0 );
 
 		// draw cursor
 		if ( (_estimatedFrequency >= 40.0) && (_estimatedFrequency <= 2000.0) ) {

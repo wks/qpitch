@@ -111,8 +111,8 @@ private: /* static constants */
 
 private: /* members */
 	// ** VISUALIZATION BUFFERS ** //
-	double*				_plotSample;					//!< Buffer used to store time samples for visualization
-	double*				_plotAutoCorr;					//!< Buffer used to store autocorrelation samples for visualization
+	std::vector<double> _plotSample;					//!< Buffer used to store time samples for visualization
+	std::vector<double> _plotAutoCorr;					//!< Buffer used to store autocorrelation samples for visualization
 	unsigned int		_plotBuffer_size;				//!< Size of the buffer used for visualization
 
 	// ** REPAINT FLAG **//

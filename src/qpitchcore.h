@@ -37,10 +37,8 @@
 
 #include <QMessageBox>
 #include <QThread>
-
-class QMutex;
-class QWaitCondition;
-
+#include <QMutex>
+#include <QWaitCondition>
 
 //! An exception thrown when a PortAudio error occurs
 class QPaSoundInputException : public std::runtime_error {
@@ -99,7 +97,7 @@ public: /* methods */
 	 * \param[in] plotPlot_size the number of sample in the buffer used for visualization
 	 * \param[in] parent a QObject* with the handle of the parent
 	 */
-	QPitchCore( const unsigned int plotPlot_size = 512, QObject* parent = 0 );
+	QPitchCore( QObject* parent, const unsigned int plotPlot_size = 512);
 
 	//! Default destructor.
 	~QPitchCore( );
@@ -143,7 +141,7 @@ public: /* methods */
      *  \param[in] input Pointer to the interleaved input samples.
      *  \param[in] frameCount Number of sample frames to be processed.
      */
-    int paStoreInputBufferCallback( const short int* output, unsigned long frameCount );
+    int paStoreInputBufferCallback( const int16_t* output, unsigned long frameCount );
 
 signals:
 	//! Emitted when any part of the visualization data is updated.
@@ -182,7 +180,7 @@ private: /* members */
 	PaStreamParameters	_inputParameters;						//!< Parameters of the input audio stream
 	PaStream*			_stream;								//!< Handle to the PortAudio stream
 	double				_sampleFrequency;						//!< PortAudio stream
-	short int*			_buffer;								//!< Internal buffer to store the input samples read in the callback
+	std::vector<int16_t> _buffer;								//!< Internal buffer to store the input samples read in the callback
 	unsigned int		_buffer_size;							//!< Size of the internal buffer
 
 	// ** FFTW STRUCTURES ** //
@@ -194,9 +192,9 @@ private: /* members */
 	fftw_complex*		_fftw_out_freq;							//!< Buffer used to store signals in the frequency domain (first the FFT of the input signal and later the FFT of its autocorrelation)
 	// ** THREAD HANDLING ** //
 	bool				_running;								//!< True when the thread is running
-	QMutex*				_mutex;									//!< Mutex used by the wait condition
+	QMutex				_mutex;									//!< Mutex used by the wait condition
 	bool 				_bufferUpdated;						    //!< Set to true when the input buffer is filled by the audio backend.
-	QWaitCondition*		_waitCond;								//!< Wait condition used to put the thread to sleep while waiting for audio samples
+	QWaitCondition		_waitCond;								//!< Wait condition used to put the thread to sleep while waiting for audio samples
 
 	// ** TEMPORARY BUFFERS USED FOR VISUALIZATION ** //
 	VisualizationData   _visualizationData;						//!< Visualization data shared with the UI thread
