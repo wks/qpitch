@@ -1,5 +1,7 @@
 #pragma once
 
+#include "notes.h"
+
 #include <QMutex>
 #include <cstdint>
 #include <vector>
@@ -15,4 +17,5 @@ public:
 	std::vector<double>	plotAutoCorr;	        //!< Buffer used to store autocorrelation samples used for visualization
     double              timeRangeSample;
     double              estimatedFrequency;     //!< Estimated frequency
+    std::optional<EstimatedNote> estimatedNote;          //!< Estimated note
 };

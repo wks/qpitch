@@ -4,19 +4,13 @@
 
 FreqDiffView::FreqDiffView(QWidget *parent): QWidget(parent) {
     _signalPresent = false;
-    _estimatedFrequency = 0.0;
-    _estimatedNote = 0.0;
 }
 
 void FreqDiffView::setSignalPresent(bool signalPresent) {
     _signalPresent = signalPresent;
 }
 
-void FreqDiffView::setEstimatedFrequency(double estimatedFrequency) {
-    _estimatedFrequency = estimatedFrequency;
-}
-
-void FreqDiffView::setEstimatedNote(double estimatedNote) {
+void FreqDiffView::setEstimatedNote(std::optional<EstimatedNote> estimatedNote) {
     _estimatedNote = estimatedNote;
 }
 
@@ -44,10 +38,9 @@ void FreqDiffView::paintEvent(QPaintEvent *event) {
     painter.setPen(penCenter);
     painter.drawLine(QPoint(center.x(), rect.top()), QPointF(center.x(), rect.bottom()));
 
-    if (_signalPresent && _estimatedFrequency != 0.0 && _estimatedNote != 0.0) {
-        double diffSemitone = (log2(_estimatedFrequency) - log2(_estimatedNote)) * 12.0;
-        double clamped = std::clamp(diffSemitone, -0.5, 0.5);
-        double estX = center.x() + rect.width() * clamped;
+    if (_signalPresent && _estimatedNote) {
+        const EstimatedNote &estimatedNote = _estimatedNote.value();
+        double estX = center.x() + rect.width() * estimatedNote.currentPitchDeviation;
 
         QPen penEstimated;
         penEstimated.setColor(QColor::fromRgb(qRgb(255, 0, 0)));

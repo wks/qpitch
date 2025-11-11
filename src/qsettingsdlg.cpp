@@ -42,15 +42,15 @@ QSettingsDlg::QSettingsDlg( const QPitchParameters& qPitchParameters, QWidget* p
 
 	switch( qPitchParameters.tuningNotation ) {
 		default:
-		case QLogView::NOTATION_US:
+		case TuningNotation::US:
 			_sd.radioButton_scaleUs->setChecked( true );
 			break;
 
-		case QLogView::NOTATION_FRENCH:
+		case TuningNotation::FRENCH:
 			_sd.radioButton_scaleFrench->setChecked( true );
 			break;
 
-		case QLogView::NOTATION_GERMAN:
+		case TuningNotation::GERMAN:
 			_sd.radioButton_scaleGerman->setChecked( true );
 			break;
 
@@ -61,14 +61,14 @@ QSettingsDlg::QSettingsDlg( const QPitchParameters& qPitchParameters, QWidget* p
 void QSettingsDlg::acceptSettings( )
 {
 	// ** UPDATE THE APPLICATION SETTINGS ** //
-	QLogView::TuningNotation tuningNotation = QLogView::NOTATION_US;
+	TuningNotation tuningNotation = TuningNotation::US;
 
 	if ( _sd.radioButton_scaleUs->isChecked( ) ) {
-		tuningNotation = QLogView::NOTATION_US;
+		tuningNotation = TuningNotation::US;
 	} else if ( _sd.radioButton_scaleFrench->isChecked( ) ) {
-		tuningNotation = QLogView::NOTATION_FRENCH;
+		tuningNotation = TuningNotation::FRENCH;
 	} else if ( _sd.radioButton_scaleGerman->isChecked( ) ) {
-		tuningNotation = QLogView::NOTATION_GERMAN;
+		tuningNotation = TuningNotation::GERMAN;
 	}
 
 	emit updateApplicationSettings( _sd.comboBox_sampleFrequency->currentText( ).toUInt( ), _sd.comboBox_frameSize->currentText( ).toUInt( ),

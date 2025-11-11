@@ -1,16 +1,18 @@
 #pragma once
 
+#include "notes.h"
+
 #include <QWidget>
 #include <QSize>
 
 class FreqDiffView : public QWidget {
+    Q_OBJECT
 public:
     explicit FreqDiffView(QWidget *parent);
 
 public slots:
     void setSignalPresent(bool signalPresent);
-    void setEstimatedFrequency(double setEstimatedFrequency);
-    void setEstimatedNote(double estimatedNote);
+    void setEstimatedNote(std::optional<EstimatedNote> estimatedNote);
 
 protected:
     virtual void paintEvent(QPaintEvent *event) override;
@@ -18,6 +20,5 @@ protected:
 
 private:
     bool _signalPresent;
-    double _estimatedFrequency;
-    double _estimatedNote;
+    std::optional<EstimatedNote> _estimatedNote;
 };

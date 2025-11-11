@@ -23,6 +23,7 @@
 #ifndef __QPITCHCORE_H_
 #define __QPITCHCORE_H_
 
+#include "notes.h"
 #include "visualization_data.h"
 
 //! Definition used to feed the application with a reference squarewave
@@ -97,7 +98,7 @@ public: /* methods */
 	 * \param[in] plotPlot_size the number of sample in the buffer used for visualization
 	 * \param[in] parent a QObject* with the handle of the parent
 	 */
-	QPitchCore( QObject* parent, const unsigned int plotPlot_size = 512);
+	QPitchCore( QObject* parent, const unsigned int plotPlot_size, TuningParameters tuningParameters);
 
 	//! Default destructor.
 	~QPitchCore( );
@@ -142,6 +143,8 @@ public: /* methods */
      *  \param[in] frameCount Number of sample frames to be processed.
      */
     int paStoreInputBufferCallback( const int16_t* output, unsigned long frameCount );
+
+	void setTuningParameters(TuningParameters tuningParameters);
 
 signals:
 	//! Emitted when any part of the visualization data is updated.
@@ -197,6 +200,7 @@ private: /* members */
 	QWaitCondition		_waitCond;								//!< Wait condition used to put the thread to sleep while waiting for audio samples
 
 	// ** TEMPORARY BUFFERS USED FOR VISUALIZATION ** //
+	TuningParameters 	_tuningParameters;						//!< A copy of TuningParameters used by the QPitchCore
 	VisualizationData   _visualizationData;						//!< Visualization data shared with the UI thread
 	VisualizationStatus	_visualizationStatus;					//!< Visualization status used to handle silence
 

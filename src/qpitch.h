@@ -27,6 +27,7 @@
 #include "visualization_data.h"
 
 #include <QMainWindow>
+#include <memory>
 
 class QPitchCore;
 class QTimer;
@@ -55,18 +56,6 @@ public: /* methods */
 
 
 public slots:
-	//! Update the displayed value of the estimated note.
-	/*!
-	 * \param[in] estimatedNote target frequency of the note identified
-	 */
-	void setEstimatedNote( double estimatedNote );
-
-	//! Update the displayed value of the estimated frequency.
-	/*!
-	 * \param[in] estimatedFrequency the value of the signal frequency estimated as the maximum of the autocorrelation
-	 */
-	void setEstimatedFrequency( double estimatedFrequency );
-
 	//! Enable the update of the estimated and detected frequencies.
 	/*!
 	 * \param[in] enabled the status of GUI
@@ -98,6 +87,7 @@ private: /* members */
 	// ** Qt WIDGETS ** //
 	Ui::QPitch		_gt;							//!< Mainwindow created with Qt-Designer
 	QPitchCore*		_hQPitchCore;					//!< Handle to the working thread
+	std::shared_ptr<TuningParameters> 	_tuningParameters;
 
 	// ** STATUS BAR ITEMS ** //
 	QLabel				_sb_labelDeviceInfo;			//!< Label with the device information
@@ -107,8 +97,7 @@ private: /* members */
 	bool				_compactModeActivated;			//!< Flag to request a widget resize to the compact mode
 
 	// ** PITCH ESTIMATION ** //
-	double				_estimatedFrequency;			//!< Estimated frequency for the input signal
-	double				_estimatedNote;					//!< Estimated note closest to the estimated frequency
+	std::optional<EstimatedNote> _estimatedNote;
 
 private slots:
 	//! Open a dialog to configure the application settings.

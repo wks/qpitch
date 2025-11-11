@@ -33,7 +33,7 @@ struct QPitchParameters {
 	unsigned int				sampleFrequency;		//!< Current sample rate
 	unsigned int				fftFrameSize;			//!< Current size of the buffer used to compute the FFT
 	double						fundamentalFrequency;	//!< The reference frequency of A4 used to estimate the pitch
-	QLogView::TuningNotation	tuningNotation;			//!< Current tuning notation
+	TuningNotation	tuningNotation;			//!< Current tuning notation
 };
 
 

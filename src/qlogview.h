@@ -35,20 +35,16 @@
 #ifndef __QLOGVIEW_H_
 #define __QLOGVIEW_H_
 
+#include "notes.h"
+
 #include <QWidget>
 #include <QPicture>
 
 class QLogView : public QWidget {
 	Q_OBJECT
 
-
 public: /* enumerations */
 	//! Enumeration of the available tuning scales
-	enum TuningNotation {
-		NOTATION_US,
-		NOTATION_FRENCH,
-		NOTATION_GERMAN
-	};
 
 
 public: /* methods */
@@ -58,42 +54,18 @@ public: /* methods */
 	 */
 	QLogView( QWidget* parent = 0 );
 
-	//! Set the parameters of the current pitch detection algorithm.
-	/*!
-	 * \param[in] fundamentalFrequency fundamental frequency of the note A4
-	 * \param[in] tuningNotation tuning notation used to select the string to display
-	 */
-	void setTuningParameters( const double fundamentalFrequency, const TuningNotation tuningNotation );
-
-	//! Get the parameters of the current pitch detection algorithm.
-	/*!
-	 * \param[out] fundamentalFrequency fundamental frequency of the note A4
-	 * \param[out] tuningNotation tuning notation used to select the string to display
-	 */
-	void getTuningParameters( double& fundamentalFrequency, TuningNotation& tuningNotation ) const;
-
+	//! Set the TuningParameters object
+	void setTuningParameters(std::shared_ptr<TuningParameters> tuningParameters);
 
 public slots:
-	//! Set the estimated value of the frequency of the input signal.
-	/*!
-	 * \param[in] estimatedFrequency estimated frequency used to detect the current pitch
-	 */
-	void setEstimatedFrequency( double estimatedFrequency );
+	//! Set the estimated note.
+	void setEstimatedNote(std::optional<EstimatedNote> estimatedNote);
 
 	//! Enable the visualization of the cursor on the note scale.
 	/*!
 	 * \param[in] enabled the status of the cursor
 	 */
 	void setPlotEnabled( bool enabled );
-
-
-signals:
-	//! Update the frequency of the estimated note.
-	/*!
-	 * \param[in] estimatedNote target frequency of the pitch identified
-	 */
-	void updateEstimatedNote( double estimatedNote );
-
 
 protected: /* methods */
 	//! Function called to handle a repaint request.
@@ -127,14 +99,8 @@ private: /* members */
 	static const QString NoteLabel[6][12];				//!< Labels of the note in different tuning scales
 
 	// ** PITCH DETECTION PARAMETERS ** //
-	static const double	D_NOTE;							//!< Ratio of two consecutive notes for pitch detection
-	static const double	D_NOTE_LOG;						//!< Ratio of two consecutive notes for visualization
-	double				_noteFrequency[12];				//!< Frequencies of the notes in the reference octave used for pitch detection
-	double				_noteScale[12];					//!< Scale of the notes in the reference octave used for visualization
-	double				_fundamentalFrequency;			//!< Fundamental frequency used as a reference to build the pitch scale
-	TuningNotation		_tuningNotation;				//!< Musical notation used to select the string displayed
-	int					_currentPitch;					//!< Frequency of the closest note in the scale
-	double				_currentPitchDeviation;			//!< percentuale da -0.5 a +0.5 che dice di quanto va disegnato spostato
+	std::shared_ptr<TuningParameters>	_tuningParameters;			//!< Tuning parameters
+	std::optional<EstimatedNote>		_estimatedNote;
 
 	// ** REPAINT FLAG **//
 	bool				_drawBackground;				//!< Redraw everything when true, otherwise redraw only the note scale

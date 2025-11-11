@@ -32,20 +32,6 @@
 
 static FPSProfiler fp("logview");
 
-// ** MUSICAL NOTATIONS ** //
-const QString QLogView::NoteLabel[6][12] = {
-	{  "A",  QString("A%1").arg(QChar(0x266F)),  "B",  "C",  QString("C%1").arg(QChar(0x266F)),  "D",  QString("D%1").arg(QChar(0x266F)),  "E",  "F",   QString("F%1").arg(QChar(0x266F)),   "G",   QString("G%1").arg(QChar(0x266F)) },	/* US  */
-	{  "A",  QString("B%1").arg(QChar(0x266D)),  "B",  "C",  QString("D%1").arg(QChar(0x266D)),  "D",  QString("E%1").arg(QChar(0x266D)),  "E",  "F",   QString("G%1").arg(QChar(0x266D)),   "G",   QString("A%1").arg(QChar(0x266D)) },	/* US alternate */
-	{ "La", QString("La%1").arg(QChar(0x266F)), "Si", "Do", QString("Do%1").arg(QChar(0x266F)), "Re", QString("Re%1").arg(QChar(0x266F)), "Mi", "Fa",  QString("Fa%1").arg(QChar(0x266F)), "Sol", QString("Sol%1").arg(QChar(0x266F)) },	/* French */
-	{ "La", QString("Si%1").arg(QChar(0x266D)), "Si", "Do", QString("Re%1").arg(QChar(0x266D)), "Re", QString("Mi%1").arg(QChar(0x266D)), "Mi", "Fa", QString("Sol%1").arg(QChar(0x266D)), "Sol",  QString("La%1").arg(QChar(0x266D)) },	/* French alternate */
-	{  "A",                                "B",  "H",  "C",  QString("C%1").arg(QChar(0x266F)),  "D",  QString("D%1").arg(QChar(0x266F)),  "E",  "F",   QString("F%1").arg(QChar(0x266F)),   "G",   QString("G%1").arg(QChar(0x266F)) },	/* German */
-	{  "A",                                "B",  "H",  "C",  QString("D%1").arg(QChar(0x266D)),  "D",  QString("E%1").arg(QChar(0x266D)),  "E",  "F",   QString("G%1").arg(QChar(0x266D)),   "G",   QString("A%1").arg(QChar(0x266D)) }		/* German alternate */
-};
-
-// ** NOTE RATIOS ** //
-const double	QLogView::D_NOTE				= pow( 2.0, 1.0/12.0 );
-const double	QLogView::D_NOTE_LOG			= log10( pow( 2.0, 1.0/12.0 ) ) / log10( 2.0 );
-
 // ** WIDGET SIZES ** //
 const double	QLogView::SIDE_MARGIN			= 0.02;
 const int		QLogView::BAR_HEIGHT			= 8;
@@ -60,101 +46,25 @@ const double	QLogView::ACCEPTED_DEVIATION	= 0.025;
 
 QLogView::QLogView( QWidget* parent ) : QWidget( parent )
 {
-	// ** INITIALIZE PRIVATE VARIABLES ** //
-	_tuningNotation			= NOTATION_US;
-	_fundamentalFrequency	= 440.0;
-
 	// redraw everything the first time and disable cursor
 	_drawBackground			= true;
 	_drawForeground			= false;
-	_currentPitch			= -1;
 }
 
 
-void QLogView::setTuningParameters( const double fundamentalFrequency, const TuningNotation tuningNotation )
+void QLogView::setTuningParameters(std::shared_ptr<TuningParameters> tuningParameters)
 {
-	// ** CHECK LIMITS AND UPDATE PARAMETERS ** //
-	if ( tuningNotation <= NOTATION_GERMAN ) {
-		_tuningNotation = (TuningNotation) tuningNotation;
-	}
-
-	if ( (_fundamentalFrequency >= 400.0) && (_fundamentalFrequency <= 480.0) ) {
-		_fundamentalFrequency = fundamentalFrequency;
-	}
-
-	// ** UPDATE PITCH DETECTION CONSTANTS ** //
-	for ( unsigned int k = 0 ; k < 12 ; ++k ) {
-		_noteFrequency[k]	= _fundamentalFrequency * pow( D_NOTE, (int) k );						// set frequencies for pitch detection
-		_noteScale[k]		= log10( _fundamentalFrequency ) / log10( 2.0 ) + (k * D_NOTE_LOG);		// set frequencies for visualization
-	}
+	_tuningParameters = tuningParameters;
 
 	// ** UPDATE THE GUI ** //
 	_drawBackground = true;
 	update( );
 }
 
-
-void QLogView::getTuningParameters( double& fundamentalFrequency, TuningNotation& tuningNotation ) const
+void QLogView::setEstimatedNote(std::optional<EstimatedNote> estimatedNote)
 {
-	fundamentalFrequency	= _fundamentalFrequency;
-	tuningNotation			= _tuningNotation;
+	_estimatedNote = estimatedNote;
 }
-
-
-void QLogView::setEstimatedFrequency( double estimatedFrequency )
-{
-	// ** TRY TO ENSURE THAT THE ARRAY IS PROPERLY INITIALIZED ** //
-	Q_ASSERT( _noteFrequency[0] != 0 );
-	Q_ASSERT( _noteFrequency[11] != 0 );
-
-	// process only notes within the range [40, 2000] Hz
-	if ( (estimatedFrequency >= 40.0) && (estimatedFrequency <= 2000.0) ) {
-		// ** ESTIMATE THE NEW PITCH ** //
-		// compute the deviation of the estimated frequency with respect to the reference octave
-		int octaveDeviation = 0;
-
-		// rescale the estimatedFrequency to bring it inside the reference octave (4th octave)
-		while ( estimatedFrequency > (_noteFrequency[11] + _fundamentalFrequency * D_NOTE_LOG / 2.0 ) ) {
-			// higher frequency, higher octave
-			estimatedFrequency /= 2.0;
-			octaveDeviation++;
-		}
-
-		while ( estimatedFrequency < (_noteFrequency[0] - _fundamentalFrequency * D_NOTE_LOG / 2.0 ) ) {
-			// lower frequency, lower octave
-			estimatedFrequency *= 2.0;
-			octaveDeviation--;
-		}
-
-		/*
-		 * here estimatedFrequency is in the range ( _noteFrequency[0], _noteFrequency[11] )
-		 * so it is possible to find the pitch in the scale as the one with the minimum
-		 * distance in the LINEAR scale (logarithm of the frequencies)
-		 */
-
-		double			minPitchDeviation		= _fundamentalFrequency * D_NOTE_LOG / 2.0;
-		unsigned int	minPitchDeviation_index	= 0;
-		double			log_estimatedFrequency	= log10(estimatedFrequency) / log10( 2.0 );
-
-		for ( unsigned int k = 0 ; k < 12 ; ++k ) {
-			if ( fabs( log_estimatedFrequency - _noteScale[k] ) < minPitchDeviation ) {
-				minPitchDeviation		= fabs( log_estimatedFrequency - _noteScale[k] );
-				minPitchDeviation_index	= k;
-			}
-		}
-
-		// save the details of the pitch deviation for the visualization
-		_currentPitch 			= minPitchDeviation_index;
-		_currentPitchDeviation	= ( log_estimatedFrequency - _noteScale[minPitchDeviation_index] ) / D_NOTE_LOG;
-
-		// ** BROADCAST PITCH ESTIMATION ** //
-		emit updateEstimatedNote( _noteFrequency[minPitchDeviation_index] * pow( 2.0, octaveDeviation ) );
-	} else {
-		// disable current selection
-		_currentPitch = -1;
-	}
-}
-
 
 void QLogView::setPlotEnabled( bool enabled )
 {
@@ -166,6 +76,8 @@ void QLogView::setPlotEnabled( bool enabled )
 void QLogView::paintEvent( QPaintEvent* /* event */ )
 {
 	fp.tick();
+
+	Q_ASSERT(_tuningParameters);
 
 	// ** INITIALIZE PAINTER ** //
 	QPainter	painter;
@@ -224,13 +136,15 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 		for ( unsigned int k = 0 ; k < 12 ; ++k ) {
 			xTick = (int) ( scaleWidth / 24.0 + scaleWidth / 12.0 * k );
 			// label above the bar
-			painter.drawText( xTick - (painter.fontMetrics( ).horizontalAdvance( NoteLabel[2 * _tuningNotation][k] ) / 2 + 1),
+			const QString &labelAbove = _tuningParameters->getNoteLabel(k, false);
+			const QString &labelBelow = _tuningParameters->getNoteLabel(k, true);
+			painter.drawText( xTick - (painter.fontMetrics( ).horizontalAdvance(labelAbove) / 2 + 1),
 				- BAR_HEIGHT - painter.fontMetrics( ).descent( ) - LABEL_OFFSET,
-				NoteLabel[2 * _tuningNotation][k] );
+				labelAbove);
 			// label below the bar
-			painter.drawText( xTick - (painter.fontMetrics( ).horizontalAdvance( NoteLabel[2 * _tuningNotation + 1][k] ) / 2 + 1),
+			painter.drawText( xTick - (painter.fontMetrics( ).horizontalAdvance(labelBelow) / 2 + 1),
 				BAR_HEIGHT + painter.fontMetrics( ).ascent( ) + LABEL_OFFSET,
-				NoteLabel[2 * _tuningNotation + 1][k] );
+				labelBelow);
 		}
 		painter.end( );
 	}
@@ -240,7 +154,8 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
     painter.setRenderHint( QPainter::Antialiasing );
 	painter.drawPicture( 0, 0, _picture );
 
-	if ( (_drawForeground == true) && (_currentPitch >= 0) ) {
+	if ( (_drawForeground == true) && _estimatedNote ) {
+		const EstimatedNote& estimatedNote = _estimatedNote.value();
 		// ** DRAW THE CURSOR IF REQUIRED ** //
 		// draw labels
 		painter.translate( QPoint( (int)(width( ) * SIDE_MARGIN), height( ) / 2 ) );
@@ -250,14 +165,17 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 		font.setPointSize( font.pointSize( ) + 2 );
 		painter.setFont( font );
 
-		int xTick = (int) ( scaleWidth / 24.0 + scaleWidth / 12.0 * _currentPitch );
+		int xTick = (int) ( scaleWidth / 24.0 + scaleWidth / 12.0 * estimatedNote.currentPitch );
 
-		if ( fabs( _currentPitchDeviation ) < ACCEPTED_DEVIATION ) {
+		const QString &labelAbove = _tuningParameters->getNoteLabel(estimatedNote.currentPitch, false);
+		const QString &labelBelow = _tuningParameters->getNoteLabel(estimatedNote.currentPitch, true);
+
+		if ( fabs( estimatedNote.currentPitchDeviation ) < ACCEPTED_DEVIATION ) {
 			// draw a square around the note when the error pitch is less than 2.5 percent
 			painter.setPen( QPen( Qt::red, 0, Qt::SolidLine ) );
-			painter.drawRoundedRect( QRectF ( xTick - painter.fontMetrics( ).horizontalAdvance( NoteLabel[2 * _tuningNotation][_currentPitch] ) / 2.0 - CARET_BORDER,
+			painter.drawRoundedRect( QRectF ( xTick - painter.fontMetrics( ).horizontalAdvance( labelAbove ) / 2.0 - CARET_BORDER,
 				-BAR_HEIGHT - painter.fontMetrics( ).ascent( ) - LABEL_OFFSET - CARET_BORDER,
-				painter.fontMetrics( ).horizontalAdvance( NoteLabel[2 * _tuningNotation][_currentPitch] ) + 2 * CARET_BORDER,
+				painter.fontMetrics( ).horizontalAdvance( labelAbove ) + 2 * CARET_BORDER,
 				2 * ( BAR_HEIGHT + painter.fontMetrics( ).ascent( ) + LABEL_OFFSET + CARET_BORDER) ), 15, 15, Qt::RelativeSize );
 		}
 
@@ -265,20 +183,20 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 		painter.setPen( QPen( Qt::red, 0, Qt::SolidLine ) );
 
 		// label above the bar
-		painter.drawText( xTick - (painter.fontMetrics( ).horizontalAdvance( NoteLabel[2 * _tuningNotation][_currentPitch] ) / 2 + 1),
+		painter.drawText( xTick - (painter.fontMetrics( ).horizontalAdvance( labelAbove ) / 2 + 1),
 			-BAR_HEIGHT - painter.fontMetrics( ).descent( ) - LABEL_OFFSET,
-			NoteLabel[2 * _tuningNotation][_currentPitch] );
+			labelAbove );
 		// label below the bar
-		painter.drawText( xTick - (painter.fontMetrics( ).horizontalAdvance( NoteLabel[2 * _tuningNotation + 1][_currentPitch] ) / 2 + 1),
+		painter.drawText( xTick - (painter.fontMetrics( ).horizontalAdvance( labelBelow ) / 2 + 1),
 			BAR_HEIGHT + painter.fontMetrics( ).ascent( ) + LABEL_OFFSET,
-			NoteLabel[2 * _tuningNotation + 1][_currentPitch] );
+			labelBelow );
 
 		// draw the cursor
 		painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
-		int xCursor = (int) ( scaleWidth / 24.0 + scaleWidth / 12.0 * ( _currentPitch + _currentPitchDeviation ) );
-		QColor cursorColor( (int)(0xAA + 0x55 * (1.0 - 2.0 * fabs(_currentPitchDeviation))), 0x00, 0x00 );
+		int xCursor = (int) ( scaleWidth / 24.0 + scaleWidth / 12.0 * ( estimatedNote.currentPitch + estimatedNote.currentPitchDeviation ) );
+		QColor cursorColor( (int)(0xAA + 0x55 * (1.0 - 2.0 * fabs(estimatedNote.currentPitchDeviation))), 0x00, 0x00 );
 
-		if ( _currentPitchDeviation < -ACCEPTED_DEVIATION ) {
+		if ( estimatedNote.currentPitchDeviation < -ACCEPTED_DEVIATION ) {
 			// draw a right arrow if the pitch is lower than the reference
 			QPolygon rightArrow;
 			rightArrow << QPoint( xCursor - CURSOR_WIDTH / 2, -BAR_HEIGHT + 1)
@@ -291,7 +209,7 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 
 			painter.fillPath( path, cursorColor );
 			painter.drawPath( path );
-		} else if ( _currentPitchDeviation > ACCEPTED_DEVIATION ) {
+		} else if ( estimatedNote.currentPitchDeviation > ACCEPTED_DEVIATION ) {
 			// draw a left arrow if the pitch is lower than the reference
 			QPolygon rightArrow;
 			rightArrow << QPoint( xCursor + CURSOR_WIDTH / 2, -BAR_HEIGHT + 1)

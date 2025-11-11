@@ -70,7 +70,7 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 
 	// restrict the fundamental TuningNotation to the range 0 (US) - 1 (French) - 2 (German)
 	unsigned int tuningNotation = settings.value( "audio/tuningnotation", 0 ).toUInt( );
-	if ( tuningNotation <= QLogView::NOTATION_GERMAN ) {
+	if ( !(tuningNotation <= (int)TuningNotation::GERMAN) ) {
 		// invalid value, set to default (US)
 		tuningNotation = 0;
 	}
@@ -79,15 +79,18 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 	_gt.lineEdit_note->installEventFilter( this );
 	_gt.lineEdit_frequency->installEventFilter( this );
 
+	// ** INITIALIZE TUNING PARAMETERS ** //
+	_tuningParameters = std::make_shared<TuningParameters>(fundamentalFrequency, (TuningNotation)tuningNotation);
+
 	// ** INTIALIZE PORTAUDIO STREAM ** //
 	try {
-		_hQPitchCore = new QPitchCore( this, PLOT_BUFFER_SIZE );
+		_hQPitchCore = new QPitchCore( this, PLOT_BUFFER_SIZE, TuningParameters(*_tuningParameters) );
 	} catch ( QPaSoundInputException& e ) {
 		e.report( );
 	}
 
 	// ** INITIALIZE CUSTOM WIDGETS ** //
-	_gt.widget_qlogview->setTuningParameters( fundamentalFrequency, (QLogView::TuningNotation) tuningNotation );
+	_gt.widget_qlogview->setTuningParameters(_tuningParameters);
 	_gt.widget_qosziview->setBufferSize( PLOT_BUFFER_SIZE );
 
 	// ** SETUP THE CONNECTIONS ** //
@@ -115,11 +118,6 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 		this, &QPitch::setUpdateEnabled);
 	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
 		_gt.widget_freqDiff, &FreqDiffView::setSignalPresent);
-
-	connect( _gt.widget_qlogview, &QLogView::updateEstimatedNote,
-		this, &QPitch::setEstimatedNote);
-	connect( _gt.widget_qlogview, &QLogView::updateEstimatedNote,
-		_gt.widget_freqDiff, &FreqDiffView::setEstimatedNote);
 
 	// ** START PORTAUDIO STREAM ** //
 	try {
@@ -150,19 +148,6 @@ QPitch::~QPitch( )
 }
 
 
-void QPitch::setEstimatedNote( double estimatedNote )
-{
-	// ** STORE ESTIMATED NOTE ** //
-	_estimatedNote = estimatedNote;
-}
-
-
-void QPitch::setEstimatedFrequency( double estimatedFrequency )
-{
-	// ** STORE ESTIMATED FREQUENCY ** //
-	_estimatedFrequency = estimatedFrequency;
-}
-
 void QPitch::setUpdateEnabled( bool enabled )
 {
 	// ** STORE UPDATE STATUS ** //
@@ -181,12 +166,12 @@ void QPitch::closeEvent( QCloseEvent* /* event */ )
 	// audio settings
 	QPitchParameters param;
 	_hQPitchCore->getStreamParameters( param.sampleFrequency, param.fftFrameSize );
-	_gt.widget_qlogview->getTuningParameters( param.fundamentalFrequency, param.tuningNotation );
+	// _gt.widget_qlogview->getTuningParameters( param.fundamentalFrequency, param.tuningNotation );
 
 	settings.setValue( "audio/samplefrequency", param.sampleFrequency );
 	settings.setValue( "audio/buffersize", param.fftFrameSize );
 	settings.setValue( "audio/fundamentalfrequency", param.fundamentalFrequency );
-	settings.setValue( "audio/tuningnotation", param.tuningNotation );
+	settings.setValue( "audio/tuningnotation", (int)param.tuningNotation );
 
 	// ** STOP THE INPUT STREAM ** //
 	try {
@@ -220,7 +205,7 @@ void QPitch::showPreferencesDialog( )
 	// ** GET CURRENT PROPERTIES ** //
 	QPitchParameters param;
 	_hQPitchCore->getStreamParameters( param.sampleFrequency, param.fftFrameSize );
-	_gt.widget_qlogview->getTuningParameters( param.fundamentalFrequency, param.tuningNotation );
+	// _gt.widget_qlogview->getTuningParameters( param.fundamentalFrequency, param.tuningNotation );
 
 	// ** SHOW PREFERENCES DIALOG ** //
 	QSettingsDlg as( param, this );
@@ -244,7 +229,7 @@ void QPitch::setApplicationSettings( unsigned int sampleFrequency, unsigned int 
 	}
 
 	// ** UPDATE NOTE SCALE ** //
-	_gt.widget_qlogview->setTuningParameters( fundamentalFrequency, (QLogView::TuningNotation) tuningNotation );
+	_tuningParameters->setParameters(fundamentalFrequency, (TuningNotation) tuningNotation );
 }
 
 
@@ -284,13 +269,16 @@ void QPitch::updateQPitchGui( )
 
 	if ( _lineEditEnabled == true ) {
 		// ** UPDATE LABELS ** //
-		if ( (_estimatedFrequency < 40.0) || (_estimatedFrequency > 2000.0) ) {
+		if (_estimatedNote) {
+			const EstimatedNote &estimatedNote = _estimatedNote.value();
+			_gt.lineEdit_note->setText( QString( "%1 Hz" ).arg( estimatedNote.noteFrequency, 0, 'f', 2 ) );
+			_gt.lineEdit_frequency->setText( QString( "%1 Hz" ).arg( estimatedNote.estimatedFrequency, 0, 'f', 2 ) );
+			_gt.lineEdit_cents->setText(QString("%1").arg(estimatedNote.currentPitchDeviation * 100.0));
+		} else {
 			// if frequencies are out of range clear widgets
 			_gt.lineEdit_note->clear( );
 			_gt.lineEdit_frequency->clear( );
-		} else {
-			_gt.lineEdit_note->setText( QString( "%1 Hz" ).arg( _estimatedNote, 0, 'f', 2 ) );
-			_gt.lineEdit_frequency->setText( QString( "%1 Hz" ).arg( _estimatedFrequency, 0, 'f', 2 ) );
+			_gt.lineEdit_cents->clear();
 		}
 	}
 
@@ -306,9 +294,9 @@ void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
 		QMutexLocker visDataLocker(&visData->mutex);
 		_gt.widget_qosziview->setPlotSamples(visData->plotSample.data(), visData->timeRangeSample);
 		_gt.widget_qosziview->setPlotAutoCorr(visData->plotAutoCorr.data(), visData->estimatedFrequency);
-		_gt.widget_qlogview->setEstimatedFrequency(visData->estimatedFrequency);
-		setEstimatedFrequency(visData->estimatedFrequency);
-		_gt.widget_freqDiff->setEstimatedFrequency(visData->estimatedFrequency);
+		_gt.widget_qlogview->setEstimatedNote(visData->estimatedNote);
+		_estimatedNote = visData->estimatedNote;
+		_gt.widget_freqDiff->setEstimatedNote(visData->estimatedNote);
 	}
 	updateQPitchGui();
 }

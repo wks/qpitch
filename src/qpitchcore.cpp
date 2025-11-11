@@ -40,8 +40,8 @@ const int QPitchCore::SIGNAL_THRESHOLD_ON	= 100;
 const int QPitchCore::SIGNAL_THRESHOLD_OFF	= 20;
 
 
-QPitchCore::QPitchCore( QObject* parent, const unsigned int plotPlot_size ) : QThread( parent ),
-	_visualizationData(plotPlot_size)
+QPitchCore::QPitchCore( QObject* parent, const unsigned int plotPlot_size, TuningParameters tuningParameters) : QThread( parent ),
+	_visualizationData(plotPlot_size), _tuningParameters(tuningParameters)
 {
 	// ** INITIALIZE PRIVATE VARIABLES ** //
 	_stream			= NULL;
@@ -372,6 +372,8 @@ void QPitchCore::run( )
 					Q_ASSERT( (k * fftw_out_downsampleFactor) < (ZERO_PADDING_FACTOR * _fftw_in_time_size) );
 					_visualizationData.plotAutoCorr[k] = _fftw_in_time[k * fftw_out_downsampleFactor];
 				}
+
+				_visualizationData.estimatedNote = _tuningParameters.estimateNote(_visualizationData.estimatedFrequency);
 
 				std::println("Emitting visualizationDataUpdated...");
 				emit visualizationDataUpdated(&_visualizationData);
