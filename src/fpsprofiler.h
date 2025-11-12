@@ -1,15 +1,17 @@
 #pragma once
 
 #include <chrono>
+
 class FPSProfiler {
 public:
-    FPSProfiler(const char *title);
+    FPSProfiler(const char *title, bool printLog = false);
     void tick();
     double get_fps();
 private:
     using ClockType = std::chrono::steady_clock;
     using TimePointType = std::chrono::time_point<ClockType>;
 
+    bool printLog;
     const char *title;
     bool started = false;
     TimePointType start_time;

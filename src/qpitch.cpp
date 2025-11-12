@@ -30,8 +30,6 @@
 #include <QSettings>
 #include <QTimer>
 
-#include <print>
-
 // ** CONSTANTS ** //
 const int QPitch::PLOT_BUFFER_SIZE = 551;		// 44100 * 0.05 / 4 = 551.25
 													// size computed to have a time range of 50 ms with an integer downsample ratio
@@ -282,6 +280,8 @@ void QPitch::updateQPitchGui( )
 		}
 	}
 
+	_gt.lineEdit_fps->setText(QString("%1").arg(fp.get_fps()));
+
 	if ( _compactModeActivated == true ) {
 		resize( minimumSize( ) );
 		_compactModeActivated = false;
@@ -289,7 +289,6 @@ void QPitch::updateQPitchGui( )
 }
 
 void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
-	std::println("============= onVisualizationDataUpdated==============");
 	{
 		QMutexLocker visDataLocker(&visData->mutex);
 		_gt.widget_qosziview->setPlotSamples(visData->plotSample.data(), visData->timeRangeSample);

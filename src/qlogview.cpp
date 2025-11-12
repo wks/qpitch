@@ -30,8 +30,6 @@
 #include <QPainter>
 #include <QPainterPath>
 
-static FPSProfiler fp("logview");
-
 // ** WIDGET SIZES ** //
 const double	QLogView::SIDE_MARGIN			= 0.02;
 const int		QLogView::BAR_HEIGHT			= 8;
@@ -75,8 +73,6 @@ void QLogView::setPlotEnabled( bool enabled )
 
 void QLogView::paintEvent( QPaintEvent* /* event */ )
 {
-	fp.tick();
-
 	Q_ASSERT(_tuningParameters);
 
 	// ** INITIALIZE PAINTER ** //
@@ -229,8 +225,6 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 			painter.drawLine( xCursor, -BAR_HEIGHT + 1, xCursor, BAR_HEIGHT - 1 );
 		}
 	}
-
-	painter.drawText(0, 0, QString("fps: %1").arg(fp.get_fps()));
 }
 
 

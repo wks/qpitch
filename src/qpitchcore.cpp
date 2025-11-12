@@ -27,8 +27,6 @@
 #include <QtDebug>
 #include <QMutexLocker>
 
-#include <print>
-
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
 	#include <cmath>
 #endif
@@ -248,8 +246,6 @@ int QPitchCore::paStoreInputBufferCallback( const int16_t* input, unsigned long 
         memcpy( _buffer.data(), input, frameCount * sizeof( int16_t ) );
 #endif
 
-		std::println("[paStoreInputBufferCallback] Buffer updated.  frameCount: {}", frameCount);
-
 		_bufferUpdated = true;
 
         // Let the QPitchCore thread process the filled buffer.
@@ -290,8 +286,6 @@ void QPitchCore::run( )
 		}
 
 		Q_ASSERT(_bufferUpdated);
-
-		std::println("******************* buffer updated! ******************");
 
 		// ** PROCESS THE BUFFER AND SLEEP TILL THE NEXT FRAME ** //
 		// transfer the internal buffer to the external buffer and
@@ -375,7 +369,6 @@ void QPitchCore::run( )
 
 				_visualizationData.estimatedNote = _tuningParameters.estimateNote(_visualizationData.estimatedFrequency);
 
-				std::println("Emitting visualizationDataUpdated...");
 				emit visualizationDataUpdated(&_visualizationData);
 			}
 		}
