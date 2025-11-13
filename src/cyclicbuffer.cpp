@@ -20,7 +20,7 @@ void CyclicBuffer::append(const unsigned char *src, size_t len) {
         _filledOnce = true;
     } else {
         size_t rightLen = _capacity - _cursor;
-        if (len <= rightLen) {
+        if (len < rightLen) {
             // Not enough to fill the buffer.  Fill whatever src has.
             memcpy(&_buffer[_cursor], src, len);
             _cursor += len;

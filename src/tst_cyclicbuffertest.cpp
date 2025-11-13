@@ -48,6 +48,19 @@ void TestCyclicBuffer::testShortShortToMedium() {
     checkLastBytes(buffer, 70, 47, 47 - 47);
 }
 
+void TestCyclicBuffer::testShortShortToMediumThenShort() {
+    CyclicBuffer buffer(47);
+    buffer.append(iotaBuffer, 30);
+    buffer.append(iotaBuffer + 30, 17);
+    buffer.append(iotaBuffer + 47, 13);
+
+    checkLastBytes(buffer, 10, 10, 60 - 10);
+    checkLastBytes(buffer, 30, 30, 60 - 30);
+    checkLastBytes(buffer, 47, 47, 60 - 47);
+    checkLastBytes(buffer, 50, 47, 60 - 47);
+    checkLastBytes(buffer, 60, 47, 60 - 47);
+    checkLastBytes(buffer, 70, 47, 60 - 47);
+}
 void TestCyclicBuffer::testShortShortToLong() {
     CyclicBuffer buffer(47);
     buffer.append(iotaBuffer, 30);

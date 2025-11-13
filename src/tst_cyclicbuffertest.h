@@ -8,6 +8,7 @@ private slots:
     void initTestCase();
     void testShortAppend();
     void testShortShortToMedium();
+    void testShortShortToMediumThenShort();
     void testShortShortToLong();
     void testMediumAppend();
     void testLongAppend();
