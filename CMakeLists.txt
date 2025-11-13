@@ -17,10 +17,7 @@ include(GNUInstallDirs)
 # set path for additional cmake modules
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules )
 # find the required libraries and sets the corresponding environment variables
-find_package(Qt6 COMPONENTS Widgets)
-if (NOT Qt6_FOUND)
-    find_package(Qt5 5.15 COMPONENTS Core REQUIRED)
-endif()
+find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
 
 find_package( Portaudio REQUIRED )
 find_package( FFTW3 REQUIRED )
@@ -29,6 +26,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+enable_testing(true)
 
 # trigger the actual compilation of QPitch
 add_subdirectory( src )

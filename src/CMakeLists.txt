@@ -23,6 +23,7 @@ add_executable( qpitch
 	visualization_data.cpp
 	freqdiffview.cpp
 	notes.cpp
+	cyclicbuffer.cpp
 
 	qaboutdlg.h
 	qlogview.h
@@ -34,6 +35,7 @@ add_executable( qpitch
 	visualization_data.h
 	freqdiffview.h
 	notes.h
+	cyclicbuffer.h
 
 	ui/qpitch.qrc
 
@@ -68,3 +70,13 @@ install(
 	FILES ${CMAKE_CURRENT_SOURCE_DIR}/data/qpitch.desktop
     DESTINATION ${CMAKE_INSTALL_DATADIR}/applications/
 )
+
+qt_add_executable(cyclicbuffertest
+	tst_cyclicbuffertest.cpp
+	tst_cyclicbuffertest.h
+	cyclicbuffer.cpp
+	cyclicbuffer.h
+)
+
+add_test(NAME cyclicbuffertest COMMAND cyclicbuffertest)
+target_link_libraries(cyclicbuffertest PRIVATE Qt::Test)
