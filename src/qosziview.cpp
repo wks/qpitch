@@ -157,7 +157,7 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
 	if ( _drawForeground == true ) {
 		// ** UPPER AXIS ** //
 		painter.translate( plotArea_sideMargin, plotArea_topMargin + plotArea_height );
-		drawCurve( painter, _plotSample.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkGreen, 2048.0 );
+		drawCurve( painter, _plotSample.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkGreen, 0.01 );
 
 		// ** LOWER AXIS ** //
 		painter.translate( 0, 2 * (plotArea_topMargin + plotArea_height) );

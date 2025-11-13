@@ -38,8 +38,11 @@ const int QPitchCore::SIGNAL_THRESHOLD_ON	= 100;
 const int QPitchCore::SIGNAL_THRESHOLD_OFF	= 20;
 
 
-QPitchCore::QPitchCore( QObject* parent, const unsigned int plotPlot_size, TuningParameters tuningParameters) : QThread( parent ),
-	_visualizationData(plotPlot_size), _tuningParameters(tuningParameters)
+QPitchCore::QPitchCore( QObject* parent, const unsigned int plotPlot_size, TuningParameters tuningParameters) :
+	QThread( parent ),
+	_visualizationData(plotPlot_size),
+	_tuningParameters(tuningParameters),
+	_buffer(0)
 {
 	// ** INITIALIZE PRIVATE VARIABLES ** //
 	_stream			= NULL;
@@ -99,10 +102,21 @@ void QPitchCore::startStream( const unsigned int sampleFrequency, const unsigned
             _inputParameters.device						=	Pa_GetDefaultInputDevice( );				// default input device
         }
 	_inputParameters.channelCount				=	1;											// mono input
-	_inputParameters.sampleFormat				=	paInt16;									// 16 bit integer
-	_inputParameters.suggestedLatency			=	Pa_GetDeviceInfo( _inputParameters.device )->defaultHighInputLatency;
-																								// set the latency for a robust non-interactive application
+	_inputParameters.sampleFormat				=	PA_SAMPLE_FORMAT;							// the one we specified
+	_inputParameters.suggestedLatency			=	1.0 / 60.0;									// Try to get 60 fps.
 	_inputParameters.hostApiSpecificStreamInfo	=	NULL;
+
+	// ** INITIALIZE BUFFERS ** //
+	_fftw_in_time_size 	= fftFrameSize;			// size of the external buffer (default 2048)
+	_buffer = CyclicBuffer(_fftw_in_time_size * sizeof(SampleType));
+	_tmp_sample_buffer.clear();
+	_tmp_sample_buffer.resize(_fftw_in_time_size);
+
+	// ** INITIALIZE FFT STRUCTURES ** //
+	_fftw_in_time	= (double*) fftw_malloc( ZERO_PADDING_FACTOR * sizeof(double) * _fftw_in_time_size );
+	_fftw_out_freq	= (fftw_complex*) fftw_malloc( ZERO_PADDING_FACTOR * sizeof(fftw_complex) * _fftw_in_time_size );
+	_fftw_plan_FFT	= fftw_plan_dft_r2c_1d( _fftw_in_time_size, _fftw_in_time, _fftw_out_freq, FFTW_ESTIMATE );							// FFT
+	_fftw_plan_IFFT	= fftw_plan_dft_c2r_1d( ZERO_PADDING_FACTOR * _fftw_in_time_size, _fftw_out_freq, _fftw_in_time, FFTW_ESTIMATE );	// IFFT zero-padded
 
 	// ** OPEN AN AUDIO INPUT STREAM ** //
 	_buffer_size = (unsigned int)((double) _inputParameters.suggestedLatency * sampleFrequency);
@@ -120,18 +134,6 @@ void QPitchCore::startStream( const unsigned int sampleFrequency, const unsigned
 	if ( err != paNoError ) {
 		throw QPaSoundInputException( Pa_GetErrorText( err ) );
 	}
-
-	// ** INITIALIZE BUFFERS ** //
-	_buffer.clear();
-	_buffer.resize(_buffer_size);
-	_fftw_in_time_size 	= fftFrameSize;			// size of the external buffer (default 2048)
-	_fftw_in_time_index	= 0;
-
-	// ** INITIALIZE FFT STRUCTURES ** //
-	_fftw_in_time	= (double*) fftw_malloc( ZERO_PADDING_FACTOR * sizeof(double) * _fftw_in_time_size );
-	_fftw_out_freq	= (fftw_complex*) fftw_malloc( ZERO_PADDING_FACTOR * sizeof(fftw_complex) * _fftw_in_time_size );
-	_fftw_plan_FFT	= fftw_plan_dft_r2c_1d( _fftw_in_time_size, _fftw_in_time, _fftw_out_freq, FFTW_ESTIMATE );							// FFT
-	_fftw_plan_IFFT	= fftw_plan_dft_c2r_1d( ZERO_PADDING_FACTOR * _fftw_in_time_size, _fftw_out_freq, _fftw_in_time, FFTW_ESTIMATE );	// IFFT zero-padded
 
 	// ** START PORTAUDIO STREAM ** //
 	err = Pa_StartStream( _stream );
@@ -225,10 +227,10 @@ int QPitchCore::paCallback( const void* input, void* /*output*/, unsigned long f
 	Q_ASSERT( input		!= NULL );
 	Q_ASSERT( userData	!= NULL );
 
-    return( static_cast<QPitchCore*>( userData )->paStoreInputBufferCallback( (const int16_t*)input, frameCount ) );
+    return( static_cast<QPitchCore*>( userData )->paStoreInputBufferCallback( (const SampleType*)input, frameCount ) );
 }
 
-int QPitchCore::paStoreInputBufferCallback( const int16_t* input, unsigned long frameCount )
+int QPitchCore::paStoreInputBufferCallback( const SampleType* input, unsigned long frameCount )
 {
     QMutexLocker locker(&_mutex);
     if ( !_bufferUpdated ) {
@@ -243,7 +245,7 @@ int QPitchCore::paStoreInputBufferCallback( const int16_t* input, unsigned long 
         }
 #else
         // ** READ THE REAL AUDIO SIGNAL ** //
-        memcpy( _buffer.data(), input, frameCount * sizeof( int16_t ) );
+        _buffer.append((const unsigned char*)input, frameCount * sizeof( SampleType ) );
 #endif
 
 		_bufferUpdated = true;
@@ -253,8 +255,6 @@ int QPitchCore::paStoreInputBufferCallback( const int16_t* input, unsigned long 
     } else {
         // buffer cannot be locked
         std::cerr << "QPitch: buffer full, dropping " << frameCount << " samples!\n";
-        // drop all the samples in the external buffer
-        _fftw_in_time_index = 0;
     }
 
 	return paContinue;
@@ -293,84 +293,79 @@ void QPitchCore::run( )
 		// check if the whole signal is below a given threshold to
 		// stop visualization
 
-		unsigned int k = 0;
-
-		// trigger the signal to have the first sample on a rising edge accross zero
-		if ( _fftw_in_time_index == 0 ) {
-            for (  ; (k < (_buffer_size - 1)) && ((_buffer[k] >= 0) || (_buffer[k+1] < 0)) ; ++k ) {};
-		}
-
-		// check if the audio stream is below a given threshold to stop visualization
-		if ( _visualizationStatus == STOPPED ) {
-			for (  ; ( (k < _buffer_size) && (_fftw_in_time_index < _fftw_in_time_size) && ( (_buffer[k] < SIGNAL_THRESHOLD_ON) && (_buffer[k] > -SIGNAL_THRESHOLD_ON) ) ) ; ++k ) {
-				_fftw_in_time[_fftw_in_time_index++] = _buffer[k];
-			}
-		} else if ( _visualizationStatus == RUNNING ) {
-			for (  ; ( (k < _buffer_size) && (_fftw_in_time_index < _fftw_in_time_size) && ( (_buffer[k] < SIGNAL_THRESHOLD_OFF) && (_buffer[k] > -SIGNAL_THRESHOLD_OFF) ) ) ; ++k ) {
-				_fftw_in_time[_fftw_in_time_index++] = _buffer[k];
-			}
+		size_t bytes_copied = _buffer.copyLastBytes((unsigned char*)_tmp_sample_buffer.data(), _fftw_in_time_size * sizeof(SampleType));
+		size_t frames_copied = bytes_copied / sizeof(SampleType);
+		memset(_fftw_in_time, 0, _fftw_in_time_size * sizeof(double));
+		for (size_t k = 0; k < frames_copied; k++) {
+			_fftw_in_time[k] = _tmp_sample_buffer[k];
 		}
 
 		// check if the level has been triggered
-		if ( (k == _buffer_size) || (_fftw_in_time_index == _fftw_in_time_size) ) {
-			// if the array end has been hit the level of the signal is too low, so drop all the buffer
-			_fftw_in_time_index = 0;
-
+		if (false /* TODO: Find a way detect the volume of the wave */) {
 			if ( _visualizationStatus == RUNNING ) {
 				_visualizationStatus = STOP_REQUEST;
 			}
 		} else {
-			// read the remaining of the buffer
-			for (  ; ( (k < _buffer_size) && (_fftw_in_time_index < _fftw_in_time_size) ) ; ++k ) {
-				_fftw_in_time[_fftw_in_time_index++] = _buffer[k];
-			}
-
 			if ( _visualizationStatus == STOPPED ) {
 				_visualizationStatus = START_REQUEST;
 			}
 
-			// process the external buffer if required
-			if ( _fftw_in_time_index == _fftw_in_time_size ) {
-				// downsample factor used to extract a buffer with a time range of 50 milliseconds
-				unsigned int fftw_in_downsampleFactor;
-				if ( _sampleFrequency == 44100.0 ) {
-					fftw_in_downsampleFactor = 4;
-				} else if ( _sampleFrequency == 22050.0 ) {
-					fftw_in_downsampleFactor = 2;
-				}
-
-				QMutexLocker visDataLocker(&_visualizationData.mutex);
-
-				for ( unsigned int k = 0 ; k < _visualizationData.plotData_size ; ++k ) {
-					Q_ASSERT( (k * fftw_in_downsampleFactor) < (_fftw_in_time_size) );
-					_visualizationData.plotSample[k] = _fftw_in_time[k * fftw_in_downsampleFactor];
-				}
-
-				_visualizationData.timeRangeSample = _fftw_in_time_size / _sampleFrequency;
-
-				// reset the index in the external buffer
-				_fftw_in_time_index = 0;
-
-				// compute the autocorrelation and find the best matching frequency
-				_visualizationData.estimatedFrequency = fftw_pitchDetectionAlgorithm( );
-
-				// extract autocorrelation samples for the oscilloscope view in the range [40, 1000] Hz --> [0, 25] msec
-				unsigned int fftw_out_downsampleFactor;
-				if ( _sampleFrequency == 44100.0 ) {
-					fftw_out_downsampleFactor = 2 * ZERO_PADDING_FACTOR;
-				} else if ( _sampleFrequency == 22050.0 ) {
-					fftw_out_downsampleFactor = 1 * ZERO_PADDING_FACTOR;
-				}
-
-				for ( unsigned int k = 0 ; k < _visualizationData.plotData_size ; ++k ) {
-					Q_ASSERT( (k * fftw_out_downsampleFactor) < (ZERO_PADDING_FACTOR * _fftw_in_time_size) );
-					_visualizationData.plotAutoCorr[k] = _fftw_in_time[k * fftw_out_downsampleFactor];
-				}
-
-				_visualizationData.estimatedNote = _tuningParameters.estimateNote(_visualizationData.estimatedFrequency);
-
-				emit visualizationDataUpdated(&_visualizationData);
+			// downsample factor used to extract a buffer with a time range of 50 milliseconds
+			unsigned int fftw_in_downsampleFactor;
+			if ( _sampleFrequency == 44100.0 ) {
+				fftw_in_downsampleFactor = 4;
+			} else if ( _sampleFrequency == 22050.0 ) {
+				fftw_in_downsampleFactor = 2;
 			}
+
+			QMutexLocker visDataLocker(&_visualizationData.mutex);
+
+			{
+				double lastSample = _fftw_in_time[0];
+				bool risingEdgeDetected = false;
+				size_t plotSampleCursor = 0;
+				for ( unsigned int k = 1; k < frames_copied; ++k ) {
+					// Find the first rising edge that crosses the zero point.
+					double currentSample = _fftw_in_time[k];
+					if (lastSample < 0.0 && currentSample >= 0.0) {
+						risingEdgeDetected = true;
+					}
+					if (risingEdgeDetected) {
+						// TODO: See why the qosziview assumes the -32768 to 32767 range.
+						_visualizationData.plotSample[plotSampleCursor] = currentSample;
+						plotSampleCursor++;
+						if (plotSampleCursor >= _visualizationData.plotData_size) {
+							break;
+						}
+					}
+				}
+			}
+
+
+			_visualizationData.timeRangeSample = _fftw_in_time_size / _sampleFrequency;
+
+			// reset the index in the external buffer
+			frames_copied = 0;
+
+			// compute the autocorrelation and find the best matching frequency
+			_visualizationData.estimatedFrequency = fftw_pitchDetectionAlgorithm( );
+
+			// extract autocorrelation samples for the oscilloscope view in the range [40, 1000] Hz --> [0, 25] msec
+			unsigned int fftw_out_downsampleFactor;
+			if ( _sampleFrequency == 44100.0 ) {
+				fftw_out_downsampleFactor = 2 * ZERO_PADDING_FACTOR;
+			} else if ( _sampleFrequency == 22050.0 ) {
+				fftw_out_downsampleFactor = 1 * ZERO_PADDING_FACTOR;
+			}
+
+			for ( unsigned int k = 0 ; k < _visualizationData.plotData_size ; ++k ) {
+				Q_ASSERT( (k * fftw_out_downsampleFactor) < (ZERO_PADDING_FACTOR * _fftw_in_time_size) );
+				_visualizationData.plotAutoCorr[k] = _fftw_in_time[k * fftw_out_downsampleFactor];
+			}
+
+			_visualizationData.estimatedNote = _tuningParameters.estimateNote(_visualizationData.estimatedFrequency);
+
+			emit visualizationDataUpdated(&_visualizationData);
 		}
 
 		// manage the visualization status
