@@ -33,7 +33,7 @@
 
 
 // ** INITIALIZATION OF STATIC VARIABLES ** //
-const int QPitchCore::ZERO_PADDING_FACTOR	= 8;
+const int QPitchCore::ZERO_PADDING_FACTOR	= 80;
 const int QPitchCore::SIGNAL_THRESHOLD_ON	= 100;
 const int QPitchCore::SIGNAL_THRESHOLD_OFF	= 20;
 
