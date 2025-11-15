@@ -20,11 +20,8 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-//! Pitch detection algorithm and note scale visualization.
+//! Note scale visualization.
 /*!
- * This class implements a simple pitch detection algorithm to
- * identify the note corresponding to the frequency estimated as
- * the first peak of the autocorrelation function.
  * A linear note scale is displayed using the chosen musical
  * notation. A moving cursor gives a rough indication of the
  * detected note. The identified note is highlighted and
@@ -43,10 +40,6 @@
 class QLogView : public QWidget {
 	Q_OBJECT
 
-public: /* enumerations */
-	//! Enumeration of the available tuning scales
-
-
 public: /* methods */
 	//! Default constructor.
 	/*!
@@ -60,12 +53,6 @@ public: /* methods */
 public slots:
 	//! Set the estimated note.
 	void setEstimatedNote(std::optional<EstimatedNote> estimatedNote);
-
-	//! Enable the visualization of the cursor on the note scale.
-	/*!
-	 * \param[in] enabled the status of the cursor
-	 */
-	void setPlotEnabled( bool enabled );
 
 protected: /* methods */
 	//! Function called to handle a repaint request.
@@ -95,16 +82,12 @@ private: /* static constants */
 
 
 private: /* members */
-	// ** TUNING NOTATIONS ** //
-	static const QString NoteLabel[6][12];				//!< Labels of the note in different tuning scales
-
 	// ** PITCH DETECTION PARAMETERS ** //
 	std::shared_ptr<TuningParameters>	_tuningParameters;			//!< Tuning parameters
 	std::optional<EstimatedNote>		_estimatedNote;
 
 	// ** REPAINT FLAG **//
 	bool				_drawBackground;				//!< Redraw everything when true, otherwise redraw only the note scale
-	bool				_drawForeground;				//!< Draw the note cursor when true, otherwise draw nothing
 	QPicture			_picture;						//!< QPicture used to store the background to reduce the load
 };
 

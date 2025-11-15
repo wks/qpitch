@@ -25,6 +25,11 @@ public:
 
     const QString& getNoteLabel(int seq, bool alternative) const;
 
+    /*!
+     * This method implements a simple pitch detection algorithm to
+     * identify the note corresponding to the frequency estimated as
+     * the first peak of the autocorrelation function.
+     */
     std::optional<EstimatedNote> estimateNote(double estimatedFrequency) const;
 
 public:

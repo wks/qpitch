@@ -111,8 +111,6 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
 		_gt.widget_qosziview, &QOsziView::setPlotEnabled);
 	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
-		_gt.widget_qlogview, &QLogView::setPlotEnabled);
-	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
 		this, &QPitch::setUpdateEnabled);
 	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
 		_gt.widget_freqDiff, &FreqDiffView::setSignalPresent);

@@ -46,7 +46,6 @@ QLogView::QLogView( QWidget* parent ) : QWidget( parent )
 {
 	// redraw everything the first time and disable cursor
 	_drawBackground			= true;
-	_drawForeground			= false;
 }
 
 
@@ -63,13 +62,6 @@ void QLogView::setEstimatedNote(std::optional<EstimatedNote> estimatedNote)
 {
 	_estimatedNote = estimatedNote;
 }
-
-void QLogView::setPlotEnabled( bool enabled )
-{
-	// ** SET THE ACTIVAITON STATUS ** //
-	_drawForeground = enabled;
-}
-
 
 void QLogView::paintEvent( QPaintEvent* /* event */ )
 {
@@ -150,7 +142,7 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
     painter.setRenderHint( QPainter::Antialiasing );
 	painter.drawPicture( 0, 0, _picture );
 
-	if ( (_drawForeground == true) && _estimatedNote ) {
+	if ( _estimatedNote ) {
 		const EstimatedNote& estimatedNote = _estimatedNote.value();
 		// ** DRAW THE CURSOR IF REQUIRED ** //
 		// draw labels
