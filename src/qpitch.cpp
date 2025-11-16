@@ -112,8 +112,6 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 		_gt.widget_qosziview, &QOsziView::setPlotEnabled);
 	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
 		this, &QPitch::setUpdateEnabled);
-	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
-		_gt.widget_freqDiff, &FreqDiffView::setSignalPresent);
 
 	// ** START PORTAUDIO STREAM ** //
 	try {

@@ -3,11 +3,6 @@
 #include <QPainter>
 
 FreqDiffView::FreqDiffView(QWidget *parent): QWidget(parent) {
-    _signalPresent = false;
-}
-
-void FreqDiffView::setSignalPresent(bool signalPresent) {
-    _signalPresent = signalPresent;
 }
 
 void FreqDiffView::setEstimatedNote(std::optional<EstimatedNote> estimatedNote) {
@@ -22,11 +17,9 @@ void FreqDiffView::paintEvent(QPaintEvent *event) {
     QPointF center = rect.center();
 
     QBrush brushBg(Qt::BrushStyle::SolidPattern);
-    if (_signalPresent) {
-        brushBg.setColor(qRgb(255, 255, 128));
-    } else {
-        brushBg.setColor(qRgb(128, 255, 255));
-    }
+    brushBg.setColor(qRgb(255, 255, 128));
+
+    painter.setPen(Qt::NoPen);
     painter.setBrush(brushBg);
     painter.drawRect(rect);
 
@@ -36,9 +29,9 @@ void FreqDiffView::paintEvent(QPaintEvent *event) {
     penCenter.setWidthF(1.0);
 
     painter.setPen(penCenter);
-    painter.drawLine(QPoint(center.x(), rect.top()), QPointF(center.x(), rect.bottom()));
+    painter.drawLine(QPointF(center.x(), rect.top()), QPointF(center.x(), rect.bottom()));
 
-    if (_signalPresent && _estimatedNote) {
+    if (_estimatedNote) {
         const EstimatedNote &estimatedNote = _estimatedNote.value();
         double estX = center.x() + rect.width() * estimatedNote.currentPitchDeviation;
 
@@ -48,7 +41,7 @@ void FreqDiffView::paintEvent(QPaintEvent *event) {
         penEstimated.setWidthF(1.0);
 
         painter.setPen(penEstimated);
-        painter.drawLine(QPoint(estX, rect.top()), QPointF(estX, rect.bottom()));
+        painter.drawLine(QPointF(estX, rect.top()), QPointF(estX, rect.bottom()));
     }
 }
 

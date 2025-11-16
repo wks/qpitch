@@ -10,8 +10,6 @@ class FreqDiffView : public QWidget {
 public:
     explicit FreqDiffView(QWidget *parent);
 
-public slots:
-    void setSignalPresent(bool signalPresent);
     void setEstimatedNote(std::optional<EstimatedNote> estimatedNote);
 
 protected:
@@ -19,6 +17,5 @@ protected:
     QSize minimumSizeHint() const override;
 
 private:
-    bool _signalPresent;
     std::optional<EstimatedNote> _estimatedNote;
 };
