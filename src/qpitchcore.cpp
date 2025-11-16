@@ -31,16 +31,20 @@
 	#include <cmath>
 #endif
 
+class QPitchCorePrivate {
+
+};
+
 
 // ** INITIALIZATION OF STATIC VARIABLES ** //
 const int QPitchCore::SIGNAL_THRESHOLD_ON	= 100;
 const int QPitchCore::SIGNAL_THRESHOLD_OFF	= 20;
 
 
-QPitchCore::QPitchCore( QObject* parent, const unsigned int plotPlot_size, TuningParameters tuningParameters) :
+QPitchCore::QPitchCore( QObject* parent, const unsigned int plotPlot_size, QPitchCoreOptions options) :
 	QThread( parent ),
+	_options(options),
 	_visualizationData(plotPlot_size),
-	_tuningParameters(tuningParameters),
 	_buffer(0)
 {
 	// ** INITIALIZE PRIVATE VARIABLES ** //
@@ -68,7 +72,7 @@ QPitchCore::~QPitchCore( )
 }
 
 
-void QPitchCore::startStream( const unsigned int sampleFrequency, const unsigned int fftFrameSize )
+void QPitchCore::startStream()
 {
 	// ** ENSURE THAT THE STREAM IS STOPPED AND THE THREAD IS NOT RUNNING ** //
 	Q_ASSERT( _stream == NULL );
@@ -81,41 +85,41 @@ void QPitchCore::startStream( const unsigned int sampleFrequency, const unsigned
 	}
 	_referenceSineWave_index = 0;
 #endif
-        _inputParameters.device = -1;
-        for (int i = 0, end = Pa_GetDeviceCount(); i != end; ++i) {
-            PaDeviceInfo const* info = Pa_GetDeviceInfo(i);
-            if (!info) continue;
-            if (strcmp(info->name, "pulse") == 0) {
-                _inputParameters.device = i;
-                break;
-            }
-        }
+
+	// Prefer the PulseAudio backend.  (But why does PortAudio still not support PipeWire?)
+	_inputParameters.device = -1;
+	for (int i = 0, end = Pa_GetDeviceCount(); i != end; ++i) {
+		PaDeviceInfo const* info = Pa_GetDeviceInfo(i);
+		if (!info) continue;
+		if (strcmp(info->name, "pulse") == 0) {
+			_inputParameters.device = i;
+			break;
+		}
+	}
 
 	// ** CONFIGURE THE INPUT AUDIO STREAM ** //
-	_sampleFrequency							=	sampleFrequency;
-        if (_inputParameters.device == -1) {
-            _inputParameters.device						=	Pa_GetDefaultInputDevice( );				// default input device
-        }
+	if (_inputParameters.device == -1) {
+		_inputParameters.device					=	Pa_GetDefaultInputDevice( );				// default input device
+	}
 	_inputParameters.channelCount				=	1;											// mono input
 	_inputParameters.sampleFormat				=	PA_SAMPLE_FORMAT;							// the one we specified
 	_inputParameters.suggestedLatency			=	1.0 / 60.0;									// Try to get 60 fps.
 	_inputParameters.hostApiSpecificStreamInfo	=	NULL;
 
 	// ** INITIALIZE BUFFERS ** //
-	_buffer = CyclicBuffer(fftFrameSize * sizeof(SampleType));
+	_buffer = CyclicBuffer(_options.fftFrameSize * sizeof(SampleType));
 	_tmp_sample_buffer.clear();
-	_tmp_sample_buffer.resize(fftFrameSize);
+	_tmp_sample_buffer.resize(_options.fftFrameSize);
 
-	_fftFrameSize = fftFrameSize;
-	_pitchDetection = std::make_unique<PitchDetectionContext>(sampleFrequency, fftFrameSize);
+	_pitchDetection = std::make_unique<PitchDetectionContext>(_options.sampleFrequency, _options.fftFrameSize);
 
 	// ** OPEN AN AUDIO INPUT STREAM ** //
-	_buffer_size = (unsigned int)((double) _inputParameters.suggestedLatency * sampleFrequency);
+	_buffer_size = (unsigned int)((double) _inputParameters.suggestedLatency * _options.sampleFrequency);
 	PaError err = Pa_OpenStream(
 		&_stream,
 		&_inputParameters,
 		NULL,									// no output
-		_sampleFrequency,						// sample rate (default 44100 Hz)
+		_options.sampleFrequency,				// sample rate (default 44100 Hz)
 		(long) _buffer_size,					// frames per buffer
 		paClipOff,								// disable clipping
         paCallback,                             // callback
@@ -141,10 +145,10 @@ void QPitchCore::startStream( const unsigned int sampleFrequency, const unsigned
 	Q_ASSERT( this->isRunning( ) );
 
 	qDebug( ) << "QPitchCore::startStream";
-	qDebug( ) << " - sampleFrequency         = " << _sampleFrequency;
+	qDebug( ) << " - sampleFrequency         = " << _options.sampleFrequency;
 	qDebug( ) << " - defaultHighInputLatency = " << _inputParameters.suggestedLatency;
 	qDebug( ) << " - framesPerBuffer         = " << _buffer_size;
-	qDebug( ) << " - fftFrameSize            = " << fftFrameSize << "\n";
+	qDebug( ) << " - fftFrameSize            = " << _options.fftFrameSize << "\n";
 }
 
 
@@ -257,12 +261,12 @@ void QPitchCore::run( )
 		// stop visualization
 
 		// Dump the samples out of the cyclic buffer.
-		size_t bytes_copied = _buffer.copyLastBytes((unsigned char*)_tmp_sample_buffer.data(), _fftFrameSize * sizeof(SampleType));
+		size_t bytes_copied = _buffer.copyLastBytes((unsigned char*)_tmp_sample_buffer.data(), _options.fftFrameSize * sizeof(SampleType));
 		size_t frames_copied = bytes_copied / sizeof(SampleType);
 
 		// Transfer the samples to _pitchDetection, converting sample format (float -> double) at the same time.
 		double *fftw_in_time = _pitchDetection->getInputBuffer();
-		memset(fftw_in_time, 0, _fftFrameSize * sizeof(double));
+		memset(fftw_in_time, 0, _options.fftFrameSize * sizeof(double));
 		for (size_t k = 0; k < frames_copied; k++) {
 			fftw_in_time[k] = _tmp_sample_buffer[k];
 		}
@@ -275,9 +279,9 @@ void QPitchCore::run( )
 
 		// downsample factor used to extract a buffer with a time range of 50 milliseconds
 		unsigned int fftw_in_downsampleFactor;
-		if ( _sampleFrequency == 44100.0 ) {
+		if ( _options.sampleFrequency == 44100.0 ) {
 			fftw_in_downsampleFactor = 4;
-		} else if ( _sampleFrequency == 22050.0 ) {
+		} else if ( _options.sampleFrequency == 22050.0 ) {
 			fftw_in_downsampleFactor = 2;
 		}
 
@@ -305,25 +309,25 @@ void QPitchCore::run( )
 			}
 		}
 
-		_visualizationData.timeRangeSample = _fftFrameSize / _sampleFrequency;
+		_visualizationData.timeRangeSample = _options.fftFrameSize / _options.sampleFrequency;
 
 		// compute the autocorrelation and find the best matching frequency
 		_visualizationData.estimatedFrequency = _pitchDetection->runPitchDetectionAlgorithm( );
 
 		// extract autocorrelation samples for the oscilloscope view in the range [40, 1000] Hz --> [0, 25] msec
 		unsigned int fftw_out_downsampleFactor;
-		if ( _sampleFrequency == 44100.0 ) {
+		if ( _options.sampleFrequency == 44100.0 ) {
 			fftw_out_downsampleFactor = 2 * PitchDetectionContext::ZERO_PADDING_FACTOR;
-		} else if ( _sampleFrequency == 22050.0 ) {
+		} else if ( _options.sampleFrequency == 22050.0 ) {
 			fftw_out_downsampleFactor = 1 * PitchDetectionContext::ZERO_PADDING_FACTOR;
 		}
 
 		for ( unsigned int k = 0 ; k < _visualizationData.plotData_size ; ++k ) {
-			Q_ASSERT( (k * fftw_out_downsampleFactor) < (PitchDetectionContext::ZERO_PADDING_FACTOR * _fftFrameSize) );
+			Q_ASSERT( (k * fftw_out_downsampleFactor) < (PitchDetectionContext::ZERO_PADDING_FACTOR * _options.fftFrameSize) );
 			_visualizationData.plotAutoCorr[k] = fftw_in_time[k * fftw_out_downsampleFactor];
 		}
 
-		_visualizationData.estimatedNote = _tuningParameters.estimateNote(_visualizationData.estimatedFrequency);
+		_visualizationData.estimatedNote = _options.tuningParameters.estimateNote(_visualizationData.estimatedFrequency);
 
 		emit visualizationDataUpdated(&_visualizationData);
 

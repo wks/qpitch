@@ -51,9 +51,15 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 	// ** INITIALIZE TUNING PARAMETERS ** //
 	_tuningParameters = std::make_shared<TuningParameters>(_settings.fundamentalFrequency, _settings.tuningNotation);
 
-	// ** INTIALIZE PORTAUDIO STREAM ** //
+	// ** INTIALIZE QPITCH CORE ** //
+	QPitchCoreOptions pitchCoreOptions {
+		.sampleFrequency = _settings.sampleFrequency,
+		.fftFrameSize = _settings.fftFrameSize,
+		.tuningParameters = *_tuningParameters,
+	};
+
 	try {
-		_hQPitchCore = new QPitchCore( this, PLOT_BUFFER_SIZE, TuningParameters(*_tuningParameters) );
+		_hQPitchCore = new QPitchCore(this, PLOT_BUFFER_SIZE, std::move(pitchCoreOptions));
 	} catch ( QPaSoundInputException& e ) {
 		e.report( );
 	}
@@ -87,7 +93,7 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 	// ** START PORTAUDIO STREAM ** //
 	try {
 		Q_ASSERT( _hQPitchCore != NULL );
-		_hQPitchCore->startStream( _settings.sampleFrequency, _settings.fftFrameSize );
+		_hQPitchCore->startStream();
 	} catch ( QPaSoundInputException& e ) {
 		e.report( );
 	}
@@ -178,7 +184,7 @@ void QPitch::setApplicationSettings()
 		// ** RESTART THE INPUT STREAM ** //
 		Q_ASSERT( _hQPitchCore != NULL );
 		_hQPitchCore->stopStream( );
-		_hQPitchCore->startStream( _settings.sampleFrequency, _settings.fftFrameSize );
+		_hQPitchCore->startStream( );
 	} catch ( QPaSoundInputException& e ) {
 		e.report( );
 	}

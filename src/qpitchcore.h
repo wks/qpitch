@@ -61,6 +61,22 @@ public: /* methods */
 	};
 };
 
+//! Options for the QPitchCore thread.
+/*!
+ * This contains options that are settable by the UI.  The acutal QPitchCore thread may keep a
+ * private copy of this in order to work safely concurrently.
+ *
+ * Some fields may mirror that of QPitchSettings, while others can be run-time options such as
+ * the selected device (to be added).
+ */
+struct QPitchCoreOptions {
+	uint32_t sampleFrequency;
+	size_t fftFrameSize;
+	TuningParameters tuningParameters;
+};
+
+// Private implementation.  Not visible from outside.
+class QPitchCorePrivate;
 
 //! Working thread for the QPitch application.
 /*!
@@ -81,7 +97,6 @@ public: /* methods */
  * zero-padded to increase the resolution of the autocorrelation in
  * order to have a better frequency identification.
  */
-
 class QPitchCore : public QThread {
 	Q_OBJECT
 
@@ -103,17 +118,13 @@ public: /* methods */
 	 * \param[in] plotPlot_size the number of sample in the buffer used for visualization
 	 * \param[in] parent a QObject* with the handle of the parent
 	 */
-	QPitchCore( QObject* parent, const unsigned int plotPlot_size, TuningParameters tuningParameters);
+	QPitchCore(QObject* parent, const unsigned int plotPlot_size, QPitchCoreOptions options);
 
 	//! Default destructor.
 	~QPitchCore( );
 
 	//! Start an input audio stream with the given properties.
-	/*!
-	 * \param[in] sampleFrequency the sample rate of the input stream (default 44100)
-	 * \param[in] fftFrameSize the size of the frame used to compute the FFT and the note pitch (default 4096)
-	 */
-	void startStream( const unsigned int sampleFrequency = 44100, const unsigned int fftFrameSize = 4096 );
+	void startStream();
 
 	//! Stop the input audio stream.
 	void stopStream( );
@@ -175,16 +186,17 @@ private: /* static constants */
 
 
 private: /* members */
+	// ** SETTABLE OPTIONS ** //
+	QPitchCoreOptions	_options;	// Guarded by _mutex.
+
 	// ** PORTAUDIO STREAM ** //
 	PaStreamParameters	_inputParameters;						//!< Parameters of the input audio stream
 	PaStream*			_stream;								//!< Handle to the PortAudio stream
-	double				_sampleFrequency;						//!< PortAudio stream
 	CyclicBuffer        _buffer;								//!< Internal buffer to store the input samples read in the callback
 	unsigned int		_buffer_size;							//!< Size of the internal buffer
 	std::vector<SampleType>	_tmp_sample_buffer;					//!< A temporary buffer for dumping samples from the cyclic buffer
 
 	// ** FFT ** //
-	unsigned int 		_fftFrameSize;
 	std::unique_ptr<PitchDetectionContext> _pitchDetection;
 
 	// ** THREAD HANDLING ** //
@@ -194,7 +206,6 @@ private: /* members */
 	QWaitCondition		_waitCond;								//!< Wait condition used to put the thread to sleep while waiting for audio samples
 
 	// ** TEMPORARY BUFFERS USED FOR VISUALIZATION ** //
-	TuningParameters 	_tuningParameters;						//!< A copy of TuningParameters used by the QPitchCore
 	VisualizationData   _visualizationData;						//!< Visualization data shared with the UI thread
 	VisualizationStatus	_visualizationStatus;					//!< Visualization status used to handle silence
 
