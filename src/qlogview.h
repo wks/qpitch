@@ -61,23 +61,17 @@ protected: /* methods */
 	 */
 	virtual void paintEvent( QPaintEvent* event );
 
-	//! Function called to handle a resize request.
-	/*!
-	 * \param[in] event the details of the resize event
-	 */
-	virtual void resizeEvent( QResizeEvent* event );
-
-
 private: /* static constants */
 	// ** WIDGETS SIZES ** //
 	static const double	SIDE_MARGIN;					//!< Percent width of the horizontal border
-	static const int	BAR_HEIGHT;						//!< Half the height of the tuning bar
-	static const int	MINOR_TICK_HEIGHT;				//!< Height of the minor ticks
-	static const int	MIDDLE_TICK_HEIGHT;				//!< Height of the middle ticks
-	static const int	MAJOR_TICK_HEIGHT;				//!< Height of the major ticks
-	static const int	LABEL_OFFSET;					//!< Distance of the labels from the tuning bar
-	static const int	CARET_BORDER;					//!< Space between the label and the rounded rectangle displayed when the error is below 2.5 percent
-	static const int	CURSOR_WIDTH;					//!< Width of the cursor displayed in the tuning bar
+	static const double BAR_HEIGHT;						//!< Half the height of the tuning bar
+	static const double MINOR_TICK_HEIGHT;				//!< Height of the minor ticks
+	static const double MIDDLE_TICK_HEIGHT;				//!< Height of the middle ticks
+	static const double MAJOR_TICK_HEIGHT;				//!< Height of the major ticks
+	static const double LABEL_OFFSET;					//!< Distance of the labels from the tuning bar
+	static const double CARET_BORDER;					//!< Space between the label and the rounded rectangle displayed when the error is below 2.5 percent
+	static const double CURSOR_WIDTH;					//!< Width of the cursor displayed in the tuning bar
+	static const double CURSOR_HEIGHT;					//!< Height of the cursor displayed in the tuning bar
 	static const double	ACCEPTED_DEVIATION;				//!< Pitch deviation where the cursor becomes a rectangle
 
 
