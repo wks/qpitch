@@ -40,6 +40,7 @@
 #include <QMessageBox>
 #include <QThread>
 #include <QMutex>
+#include <QMutexLocker>
 #include <QWaitCondition>
 
 //! An exception thrown when a PortAudio error occurs
@@ -123,17 +124,11 @@ public: /* methods */
 	//! Default destructor.
 	~QPitchCore( );
 
-	//! Start an input audio stream with the given properties.
-	void startStream();
+	//! Set options while QPitchCore is running.
+	void setOptions(QPitchCoreOptions options);
 
-	//! Stop the input audio stream.
-	void stopStream( );
-
-	//! Retrieve the device parameters.
-	/*!
-	 * \param[out] device the name of the device used by PortAudio plus the name of the API used by PortAudio
-	 */
-	void getPortAudioInfo( QString& device ) const;
+	//! Request the running QPitchCore thread to stop.
+	void requestStop();
 
     /*! \brief Dummy callback function to call the real non-static callback that does the work.
      *  \param[in] input Pointer to the interleaved input samples.
@@ -152,9 +147,10 @@ public: /* methods */
      */
     int paStoreInputBufferCallback( const SampleType* output, unsigned long frameCount );
 
-	void setTuningParameters(TuningParameters tuningParameters);
-
 signals:
+	//! Emitted when the port audio stream is started.
+	void portAudioStreamStarted(QString device, QString hostApi);
+
 	//! Emitted when any part of the visualization data is updated.
 	/*!
 	 * \param[in] visData a reference to the VisualizationData struct
@@ -186,30 +182,50 @@ private: /* static constants */
 
 
 private: /* members */
+	// ** PRIVATE IMPLEMENTATION ** //
+	std::unique_ptr<QPitchCorePrivate> _private;				//!< The private structure.
+
+	// ** THREAD SYNCHRONIZATION ** //
+	QMutex				_mutex;									//!< The main Mutex, guarding boolean events fields.
+	QWaitCondition		_cond;									//!< The main CondVar for responding to events.
+	bool 				_bufferUpdated;						    //!< Set to true when the input buffer is filled by the audio backend.
+	bool				_stopRequested;						//!< Set to true when the QPitchCore thread is requested to stop.
+
 	// ** SETTABLE OPTIONS ** //
-	QPitchCoreOptions	_options;	// Guarded by _mutex.
+	QPitchCoreOptions	_options;
+	std::optional<QPitchCoreOptions> _pendingOptions;	// Guarded by _mutex.
+
 
 	// ** PORTAUDIO STREAM ** //
-	PaStreamParameters	_inputParameters;						//!< Parameters of the input audio stream
 	PaStream*			_stream;								//!< Handle to the PortAudio stream
-	CyclicBuffer        _buffer;								//!< Internal buffer to store the input samples read in the callback
-	unsigned int		_buffer_size;							//!< Size of the internal buffer
+	unsigned int		_buffer_size;							//!< Size of the internal buffer of the PortAudio stream
+
+	// ** COMMUNICATION WITH PORTAUDIO CALLBACKS ** //
+	CyclicBuffer        _buffer;								//!< Buffer to store the input samples read in the callback
 	std::vector<SampleType>	_tmp_sample_buffer;					//!< A temporary buffer for dumping samples from the cyclic buffer
 
 	// ** FFT ** //
 	std::unique_ptr<PitchDetectionContext> _pitchDetection;
-
-	// ** THREAD HANDLING ** //
-	bool				_running;								//!< True when the thread is running
-	QMutex				_mutex;									//!< Mutex used by the wait condition
-	bool 				_bufferUpdated;						    //!< Set to true when the input buffer is filled by the audio backend.
-	QWaitCondition		_waitCond;								//!< Wait condition used to put the thread to sleep while waiting for audio samples
 
 	// ** TEMPORARY BUFFERS USED FOR VISUALIZATION ** //
 	VisualizationData   _visualizationData;						//!< Visualization data shared with the UI thread
 	VisualizationStatus	_visualizationStatus;					//!< Visualization status used to handle silence
 
 private: /* methods */
+	//! Start an input audio stream.
+	void startStream();
+
+	//! Stop the input audio stream.
+	void stopStream( );
+
+	//! Called when options changed.
+	void onOptionsChanged(QMutexLocker<QMutex> &locker);
+
+	//! Apply options.
+	void reconfigure();
+
+	//! Process the updated buffer.
+	void processBuffer(QMutexLocker<QMutex> &locker);
 };
 #endif
 

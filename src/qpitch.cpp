@@ -90,20 +90,12 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
 		this, &QPitch::setUpdateEnabled);
 
-	// ** START PORTAUDIO STREAM ** //
-	try {
-		Q_ASSERT( _hQPitchCore != NULL );
-		_hQPitchCore->startStream();
-	} catch ( QPaSoundInputException& e ) {
-		e.report( );
-	}
+	connect( _hQPitchCore, &QPitchCore::portAudioStreamStarted,
+		this, &QPitch::onPortAudioStreamStarted);
 
-	// ** SETUP THE STATUS BAR ** //
-	QString device;
-	_hQPitchCore->getPortAudioInfo( device );
-	_sb_labelDeviceInfo.setText( device );
-	_sb_labelDeviceInfo.setIndent( 10 );
-	_gt.statusbar->addWidget( &_sb_labelDeviceInfo, 1 );
+	// ** START THE QPITCH CORE THREAD ** //
+	Q_ASSERT( _hQPitchCore != NULL );
+	_hQPitchCore->start();
 
 	// ** REMOVE MAXIMIZE BUTTON ** //
 	Qt::WindowFlags flags = windowFlags( );
@@ -133,13 +125,8 @@ void QPitch::closeEvent( QCloseEvent* /* event */ )
 
 	_settings.store();
 
-	// ** STOP THE INPUT STREAM ** //
-	try {
-		_hQPitchCore->stopStream( );
-	} catch ( QPaSoundInputException& e ) {
-		e.report( );
-	}
-
+	// TODO: Ensure the QPitchCore doesn't see the QPitchCore instance destructed.
+	_hQPitchCore->requestStop();
 }
 
 
@@ -177,17 +164,15 @@ void QPitch::setApplicationSettings()
 {
 	// ** UPDATE NOTE SCALE ** //
 	_tuningParameters->setParameters(_settings.fundamentalFrequency, _settings.tuningNotation );
-	// TODO: Notify the QPitchCore thread that the tuning parameters are also changed.
 
-	// ** UPDATE AUDIO STREAM ** //
-	try {
-		// ** RESTART THE INPUT STREAM ** //
-		Q_ASSERT( _hQPitchCore != NULL );
-		_hQPitchCore->stopStream( );
-		_hQPitchCore->startStream( );
-	} catch ( QPaSoundInputException& e ) {
-		e.report( );
-	}
+	// ** INTIALIZE QPITCH CORE ** //
+	QPitchCoreOptions pitchCoreOptions {
+		.sampleFrequency = _settings.sampleFrequency,
+		.fftFrameSize = _settings.fftFrameSize,
+		.tuningParameters = *_tuningParameters,
+	};
+
+	_hQPitchCore->setOptions(std::move(pitchCoreOptions));
 }
 
 
@@ -258,4 +243,12 @@ void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
 		_gt.widget_freqDiff->setEstimatedNote(visData->estimatedNote);
 	}
 	updateQPitchGui();
+}
+
+void QPitch::onPortAudioStreamStarted(QString device, QString hostApi) {
+	// ** SETUP THE STATUS BAR ** //
+	QString msg = QString("Device: %1, Host API: %2").arg(device).arg(hostApi);
+	_sb_labelDeviceInfo.setText( msg );
+	_sb_labelDeviceInfo.setIndent( 10 );
+	_gt.statusbar->addWidget( &_sb_labelDeviceInfo, 1 );
 }

@@ -124,6 +124,9 @@ private slots:
 
 	//! Handle updated VisualizationData
 	void onVisualizationDataUpdated(VisualizationData *visData);
+
+	//! Called when the PortAudio stream is started.
+	void onPortAudioStreamStarted(QString device, QString hostApi);
 };
 
 #endif /* __QPITCH_H_ */
