@@ -42,43 +42,14 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 	// ** SETUP THE MAIN WINDOW ** //
 	_gt.setupUi( this );
 
-	// ** RETRIEVE APPLICATION SETTINGS ** //
-	QSettings settings( "QPitch", "QPitch" );
-
-	// restrict sample frequency to 44100 - 22050 Hz
-	unsigned int sampleFrequency = settings.value( "audio/samplefrequency", 44100 ).toUInt( );
-	if ( (sampleFrequency != 44100) && (sampleFrequency != 22050) ) {
-		// invalid value, set to default (44100 Hz)
-		sampleFrequency = 44100;
-	}
-
-	// restrict frame buffer size to 8192 - 4096 samples
-	unsigned int fftFrameSize = settings.value( "audio/buffersize", 4096 ).toUInt( );
-	if ( (fftFrameSize != 8192) && (fftFrameSize != 4096) ) {
-		// invalid value, set to default (4096 samples)
-		fftFrameSize = 4096;
-	}
-
-	// restrict the fundamental frequency to the range [400, 480] Hz
-	double fundamentalFrequency = settings.value( "audio/fundamentalfrequency", 440.0 ).toDouble( );
-	if ( (fundamentalFrequency > 480.0) || (fundamentalFrequency <= 400.0) ) {
-		// invalid value, set to default (440.0 Hz)
-		fundamentalFrequency = 440.0;
-	}
-
-	// restrict the fundamental TuningNotation to the range 0 (US) - 1 (French) - 2 (German)
-	unsigned int tuningNotation = settings.value( "audio/tuningnotation", 0 ).toUInt( );
-	if ( !(tuningNotation <= (int)TuningNotation::GERMAN) ) {
-		// invalid value, set to default (US)
-		tuningNotation = 0;
-	}
+	_settings.load();
 
 	// ** REJECT MOUSE EVENT FOR QLINEEDIT ** //
 	_gt.lineEdit_note->installEventFilter( this );
 	_gt.lineEdit_frequency->installEventFilter( this );
 
 	// ** INITIALIZE TUNING PARAMETERS ** //
-	_tuningParameters = std::make_shared<TuningParameters>(fundamentalFrequency, (TuningNotation)tuningNotation);
+	_tuningParameters = std::make_shared<TuningParameters>(_settings.fundamentalFrequency, _settings.tuningNotation);
 
 	// ** INTIALIZE PORTAUDIO STREAM ** //
 	try {
@@ -116,7 +87,7 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 	// ** START PORTAUDIO STREAM ** //
 	try {
 		Q_ASSERT( _hQPitchCore != NULL );
-		_hQPitchCore->startStream( sampleFrequency, fftFrameSize );
+		_hQPitchCore->startStream( _settings.sampleFrequency, _settings.fftFrameSize );
 	} catch ( QPaSoundInputException& e ) {
 		e.report( );
 	}
@@ -154,18 +125,7 @@ void QPitch::closeEvent( QCloseEvent* /* event */ )
 	// ** ENSURE THAT THE DATA ARE VALID ** //
 	Q_ASSERT( _hQPitchCore	!= NULL );
 
-	// ** STORE SETTINGS ** //
-	QSettings settings( "QPitch", "QPitch" );
-
-	// audio settings
-	QPitchParameters param;
-	_hQPitchCore->getStreamParameters( param.sampleFrequency, param.fftFrameSize );
-	// _gt.widget_qlogview->getTuningParameters( param.fundamentalFrequency, param.tuningNotation );
-
-	settings.setValue( "audio/samplefrequency", param.sampleFrequency );
-	settings.setValue( "audio/buffersize", param.fftFrameSize );
-	settings.setValue( "audio/fundamentalfrequency", param.fundamentalFrequency );
-	settings.setValue( "audio/tuningnotation", (int)param.tuningNotation );
+	_settings.store();
 
 	// ** STOP THE INPUT STREAM ** //
 	try {
@@ -196,34 +156,32 @@ void QPitch::showPreferencesDialog( )
 	// ** ENSURE THAT THE DATA ARE VALID ** //
 	Q_ASSERT( _hQPitchCore	!= NULL );
 
-	// ** GET CURRENT PROPERTIES ** //
-	QPitchParameters param;
-	_hQPitchCore->getStreamParameters( param.sampleFrequency, param.fftFrameSize );
-	// _gt.widget_qlogview->getTuningParameters( param.fundamentalFrequency, param.tuningNotation );
-
 	// ** SHOW PREFERENCES DIALOG ** //
-	QSettingsDlg as( param, this );
-	connect( &as, &QSettingsDlg::updateApplicationSettings,
-		this, &QPitch::setApplicationSettings);
-	as.exec( );
+	QSettingsDlg as( _settings, this );
+
+	int execResult = as.exec();
+
+	if (execResult == QDialog::Accepted) {
+		_settings = as.result();
+		setApplicationSettings();
+	}
 }
 
-
-void QPitch::setApplicationSettings( unsigned int sampleFrequency, unsigned int fftFrameSize,
-	double fundamentalFrequency, unsigned int tuningNotation )
+void QPitch::setApplicationSettings()
 {
+	// ** UPDATE NOTE SCALE ** //
+	_tuningParameters->setParameters(_settings.fundamentalFrequency, _settings.tuningNotation );
+	// TODO: Notify the QPitchCore thread that the tuning parameters are also changed.
+
 	// ** UPDATE AUDIO STREAM ** //
 	try {
 		// ** RESTART THE INPUT STREAM ** //
 		Q_ASSERT( _hQPitchCore != NULL );
 		_hQPitchCore->stopStream( );
-		_hQPitchCore->startStream( sampleFrequency, fftFrameSize );
+		_hQPitchCore->startStream( _settings.sampleFrequency, _settings.fftFrameSize );
 	} catch ( QPaSoundInputException& e ) {
 		e.report( );
 	}
-
-	// ** UPDATE NOTE SCALE ** //
-	_tuningParameters->setParameters(fundamentalFrequency, (TuningNotation) tuningNotation );
 }
 
 

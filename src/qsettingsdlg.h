@@ -24,18 +24,7 @@
 #define __QAUDIOSETTINGS_H_
 
 #include "ui_qsettingsdlg.h"
-
-#include "qlogview.h"
-
-
-//! Structure holding the application settings
-struct QPitchParameters {
-	unsigned int				sampleFrequency;		//!< Current sample rate
-	unsigned int				fftFrameSize;			//!< Current size of the buffer used to compute the FFT
-	double						fundamentalFrequency;	//!< The reference frequency of A4 used to estimate the pitch
-	TuningNotation	tuningNotation;			//!< Current tuning notation
-};
-
+#include "qpitchsettings.h"
 
 //! Settings dialog to configure the application
 /*!
@@ -58,10 +47,13 @@ class QSettingsDlg : public QDialog {
 public: /* members */
 	//! Deafult constructor.
     /*!
-     * \param[in] qPitchParameters structure with the current audio stream and tuning parameters
+     * \param[in] settings structure with the current audio stream and tuning parameters
 	 * \param[in] parent handle to the parent widget
 	 */
-	QSettingsDlg( const QPitchParameters& qPitchParameters, QWidget* parent = 0 );
+	QSettingsDlg( const QPitchSettings& settings, QWidget* parent = 0 );
+
+	//! Return the result of setting.  Only call it after the setting was accepted.
+	const QPitchSettings& result();
 
 
 public slots:
@@ -71,22 +63,14 @@ public slots:
 	//! Accept the application settings in the dialog.
 	void acceptSettings( );
 
-
-signals:
-	//! Request an update in the application settings.
-	/*!
-	 * \param[in] sampleFrequency requested sample frequency
-	 * \param[in] fftFrameSize requested size of the buffer used to compute the FFT
-	 * \param[in] fundamentalFrequency requested fundamental frequency of the note A4
-	 * \param[in] tuningNotation requested tuning notation
-	 */
-	void updateApplicationSettings( unsigned int sampleFrequency, unsigned int fftFrameSize,
-		double fundamentalFrequency, unsigned int tuningNotation );
-
-
 private: /* members */
 	// ** Qt WIDGETS ** //
 	Ui::QSettingsDlg	_sd;							//!< Dialog created with Qt-Designer
+	QPitchSettings _result;								//!< The result to be loaded
+
+	// ** METHODS ** //
+	void load(const QPitchSettings &settings);	//!< Load widget contents
+	void dump(QPitchSettings &settings);		//!< Dump widget contents
 };
 
 #endif /* __QSETTINGSDLG_H_ */

@@ -24,6 +24,7 @@
 #define __QPITCH_H_
 
 #include "ui_qpitch.h"
+#include "qpitchsettings.h"
 #include "visualization_data.h"
 
 #include <QMainWindow>
@@ -84,10 +85,13 @@ private: /* static constants */
 
 
 private: /* members */
-	// ** Qt WIDGETS ** //
+	// ** Configurations ** //
+	QPitchSettings _settings;
+	std::shared_ptr<TuningParameters> 	_tuningParameters;
+
+    // ** Qt WIDGETS ** //
 	Ui::QPitch		_gt;							//!< Mainwindow created with Qt-Designer
 	QPitchCore*		_hQPitchCore;					//!< Handle to the working thread
-	std::shared_ptr<TuningParameters> 	_tuningParameters;
 
 	// ** STATUS BAR ITEMS ** //
 	QLabel				_sb_labelDeviceInfo;			//!< Label with the device information
@@ -107,14 +111,7 @@ private slots:
 	void showAboutDialog( );
 
 	//! Update the application settings.
-	/*!
-	 * \param[in] sampleFrequency requested sample frequency
-	 * \param[in] fftFrameSize requested size of the buffer used to compute the FFT
-	 * \param[in] fundamentalFrequency requested fundamental frequency of the note A4
-	 * \param[in] tuningNotation requested tuning notation
-	 */
-	void setApplicationSettings( unsigned int sampleFrequency, unsigned int fftFrameSize,
-		double fundamentalFrequency, unsigned int tuningNotation );
+	void setApplicationSettings();
 
 	//! Set the compactmode for the application hiding the oscilloscope widget.
 	/*!

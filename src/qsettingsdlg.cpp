@@ -24,7 +24,7 @@
 
 #include <QPushButton>
 
-QSettingsDlg::QSettingsDlg( const QPitchParameters& qPitchParameters, QWidget* parent ) : QDialog( parent )
+QSettingsDlg::QSettingsDlg( const QPitchSettings& settings, QWidget* parent ) : QDialog( parent )
 {
 	// ** SETUP THE MAIN WINDOW ** //
 	_sd.setupUi( this );
@@ -35,12 +35,33 @@ QSettingsDlg::QSettingsDlg( const QPitchParameters& qPitchParameters, QWidget* p
 	connect( _sd.buttonBox->button( QDialogButtonBox::RestoreDefaults ), &QPushButton::pressed,
 		this, &QSettingsDlg::restoreDefaultSettings);
 
-	// ** INITIALIZE WIDGETS ** //
-	_sd.comboBox_sampleFrequency->setCurrentIndex( _sd.comboBox_sampleFrequency->findText( QString::number( qPitchParameters.sampleFrequency ) ) );
-	_sd.comboBox_frameSize->setCurrentIndex( _sd.comboBox_frameSize->findText( QString::number( qPitchParameters.fftFrameSize ) ) );
-	_sd.doubleSpinBox_fundamentalFrequency->setValue( qPitchParameters.fundamentalFrequency );
+	load(settings);
+}
 
-	switch( qPitchParameters.tuningNotation ) {
+const QPitchSettings& QSettingsDlg::result()
+{
+	return _result;
+}
+
+void QSettingsDlg::acceptSettings( )
+{
+	dump(_result);
+}
+
+
+void QSettingsDlg::restoreDefaultSettings( )
+{
+	QPitchSettings defaultSettings;
+	load(defaultSettings);
+}
+
+void QSettingsDlg::load(const QPitchSettings &settings)
+{
+	_sd.comboBox_sampleFrequency->setCurrentIndex( _sd.comboBox_sampleFrequency->findText( QString::number( settings.sampleFrequency ) ) );
+	_sd.comboBox_frameSize->setCurrentIndex( _sd.comboBox_frameSize->findText( QString::number( settings.fftFrameSize ) ) );
+	_sd.doubleSpinBox_fundamentalFrequency->setValue( settings.fundamentalFrequency );
+
+	switch( settings.tuningNotation ) {
 		default:
 		case TuningNotation::US:
 			_sd.radioButton_scaleUs->setChecked( true );
@@ -53,34 +74,23 @@ QSettingsDlg::QSettingsDlg( const QPitchParameters& qPitchParameters, QWidget* p
 		case TuningNotation::GERMAN:
 			_sd.radioButton_scaleGerman->setChecked( true );
 			break;
-
 	}
 }
 
-
-void QSettingsDlg::acceptSettings( )
+void QSettingsDlg::dump(QPitchSettings &settings)
 {
 	// ** UPDATE THE APPLICATION SETTINGS ** //
-	TuningNotation tuningNotation = TuningNotation::US;
+	settings.sampleFrequency = _sd.comboBox_sampleFrequency->currentText( ).toUInt( );
+	settings.fftFrameSize = _sd.comboBox_frameSize->currentText( ).toUInt( );
+	settings.fundamentalFrequency = _sd.doubleSpinBox_fundamentalFrequency->value( );
+
+	settings.tuningNotation = TuningNotation::US;
 
 	if ( _sd.radioButton_scaleUs->isChecked( ) ) {
-		tuningNotation = TuningNotation::US;
+		settings.tuningNotation = TuningNotation::US;
 	} else if ( _sd.radioButton_scaleFrench->isChecked( ) ) {
-		tuningNotation = TuningNotation::FRENCH;
+		settings.tuningNotation = TuningNotation::FRENCH;
 	} else if ( _sd.radioButton_scaleGerman->isChecked( ) ) {
-		tuningNotation = TuningNotation::GERMAN;
+		settings.tuningNotation = TuningNotation::GERMAN;
 	}
-
-	emit updateApplicationSettings( _sd.comboBox_sampleFrequency->currentText( ).toUInt( ), _sd.comboBox_frameSize->currentText( ).toUInt( ),
-		_sd.doubleSpinBox_fundamentalFrequency->value( ), (const unsigned int) tuningNotation );
-}
-
-
-void QSettingsDlg::restoreDefaultSettings( )
-{
-	// ** RESTORE THE PROPERTIES OF THE AUDIO STREAM TO THE INITIAL VALUE ** //
-	_sd.comboBox_sampleFrequency->setCurrentIndex( 0 );				// 44100 Hz
-	_sd.comboBox_frameSize->setCurrentIndex( 1 );					// 4096 samples
-	_sd.doubleSpinBox_fundamentalFrequency->setValue( 440.0 );		// A4 = 440 Hz for standard pitch
-	_sd.radioButton_scaleUs->setChecked( true );					// US notation
 }

@@ -16,20 +16,19 @@ const QString NoteLabel[6][12] = {
 const double	TuningParameters::D_NOTE				= pow( 2.0, 1.0/12.0 );
 const double	TuningParameters::D_NOTE_LOG			= log10( pow( 2.0, 1.0/12.0 ) ) / log10( 2.0 );
 
-TuningParameters::TuningParameters(double fundamentalFrequency, TuningNotation tuningNotation):
-    _fundamentalFrequency(fundamentalFrequency),
-    _tuningNotation(tuningNotation)
-{
-	// ** UPDATE PITCH DETECTION CONSTANTS ** //
-	for ( unsigned int k = 0 ; k < 12 ; ++k ) {
-		_noteFrequency[k]	= _fundamentalFrequency * pow( D_NOTE, (int) k );						// set frequencies for pitch detection
-		_noteScale[k]		= log10( _fundamentalFrequency ) / log10( 2.0 ) + (k * D_NOTE_LOG);		// set frequencies for visualization
-	}
+TuningParameters::TuningParameters(double fundamentalFrequency, TuningNotation tuningNotation) {
+    setParameters(fundamentalFrequency, tuningNotation);
 }
 
 void TuningParameters::setParameters(double fundamentalFrequency, TuningNotation tuningNotation) {
     _fundamentalFrequency = fundamentalFrequency;
     _tuningNotation = tuningNotation;
+
+	// ** UPDATE PITCH DETECTION CONSTANTS ** //
+	for ( unsigned int k = 0 ; k < 12 ; ++k ) {
+		_noteFrequency[k]	= _fundamentalFrequency * pow( D_NOTE, (int) k );						// set frequencies for pitch detection
+		_noteScale[k]		= log10( _fundamentalFrequency ) / log10( 2.0 ) + (k * D_NOTE_LOG);		// set frequencies for visualization
+	}
 }
 
 const QString& TuningParameters::getNoteLabel(int seq, bool alternative) const {

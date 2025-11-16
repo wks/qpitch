@@ -24,6 +24,7 @@ add_executable( qpitch
 	freqdiffview.cpp
 	notes.cpp
 	cyclicbuffer.cpp
+	qpitchsettings.cpp
 
 	qaboutdlg.h
 	qlogview.h
@@ -36,6 +37,7 @@ add_executable( qpitch
 	freqdiffview.h
 	notes.h
 	cyclicbuffer.h
+	qpitchsettings.h
 
 	ui/qpitch.qrc
 
