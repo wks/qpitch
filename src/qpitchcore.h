@@ -26,6 +26,7 @@
 #include "notes.h"
 #include "visualization_data.h"
 #include "cyclicbuffer.h"
+#include "pitchdetection.h"
 
 //! Definition used to feed the application with a reference squarewave
 //#define _REFERENCE_SQUAREWAVE_INPUT
@@ -34,7 +35,6 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <fftw3.h>
 #include <portaudio.h>
 
 #include <QMessageBox>
@@ -124,14 +124,6 @@ public: /* methods */
 	 */
 	void getPortAudioInfo( QString& device ) const;
 
-	//! Retrieve the audio stream parameters.
-	/*!
-	 * \param[out] sampleFrequency the sample rate of the input stream
-	 * \param[out] fftBufferSize the size of the frame used to compute the FFT and the note pitch
-	 */
-	void getStreamParameters( unsigned int& sampleFrequency, unsigned int& fftBufferSize ) const;
-	//	double& ) const;
-
     /*! \brief Dummy callback function to call the real non-static callback that does the work.
      *  \param[in] input Pointer to the interleaved input samples.
      *  \param[out] output Pointer to the interleaved output samples.
@@ -178,7 +170,6 @@ private: /* enumerations */
 		};
 
 private: /* static constants */
-	static const int	ZERO_PADDING_FACTOR;					//!< Number of times that the FFT is zero-padded to increase frequency resolution
 	static const int 	SIGNAL_THRESHOLD_ON;					//!< Value of the threshold above which the processing is activated
 	static const int 	SIGNAL_THRESHOLD_OFF;					//!< Value of the threshold below which the input audio signal is deactivated
 
@@ -192,12 +183,10 @@ private: /* members */
 	unsigned int		_buffer_size;							//!< Size of the internal buffer
 	std::vector<SampleType>	_tmp_sample_buffer;					//!< A temporary buffer for dumping samples from the cyclic buffer
 
-	// ** FFTW STRUCTURES ** //
-	fftw_plan			_fftw_plan_FFT;							//!< Plan to compute the FFT of a given signal
-	fftw_plan			_fftw_plan_IFFT;						//!< Plan to compute the IFFT of a given signal (with additional zero-padding
-	double*				_fftw_in_time;							//!< External buffer used to store signals in the time domain (first the input signal and then its autocorrelation)
-	unsigned int		_fftw_in_time_size;						//!< Size of the external buffer
-	fftw_complex*		_fftw_out_freq;							//!< Buffer used to store signals in the frequency domain (first the FFT of the input signal and later the FFT of its autocorrelation)
+	// ** FFT ** //
+	unsigned int 		_fftFrameSize;
+	std::unique_ptr<PitchDetectionContext> _pitchDetection;
+
 	// ** THREAD HANDLING ** //
 	bool				_running;								//!< True when the thread is running
 	QMutex				_mutex;									//!< Mutex used by the wait condition
@@ -210,11 +199,6 @@ private: /* members */
 	VisualizationStatus	_visualizationStatus;					//!< Visualization status used to handle silence
 
 private: /* methods */
-	//! Estimate the pitch of the input signal finding the first peak of the autocorrelation.
-	/*!
-	 * \return the frequency value corresponding to the maximum of the autocorrelation
-	 */
-	double fftw_pitchDetectionAlgorithm( );
 };
 #endif
 
