@@ -44,7 +44,6 @@ QOsziView::QOsziView( QWidget* parent ) : QWidget( parent )
 	// ** SETUP PRIVATE VARIABLES ** //
 	// redraw everything the first time and disable signals
 	_drawBackground			= true;
-	_drawForeground			= false;
 	_timeRangeSample		= 1.0;					// dummy values to avoid division by 0
 
 	//** INITIALIZE BUFFERS ** //
@@ -67,13 +66,6 @@ void QOsziView::setBufferSize( const unsigned int plotBuffer_size )
 	_plotAutoCorr.clear();
 	_plotAutoCorr.resize(plotBuffer_size);
 	_estimatedFrequency	= 0.0;
-}
-
-
-void QOsziView::setPlotEnabled( bool enabled )
-{
-	// ** SET THE ACTIVAITON STATUS ** //
-	_drawForeground = enabled;
 }
 
 
@@ -154,21 +146,19 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
 	painter.setRenderHint(QPainter::Antialiasing);
 	painter.drawPicture( 0, 0, _picture );
 
-	if ( _drawForeground == true ) {
-		// ** UPPER AXIS ** //
-		painter.translate( plotArea_sideMargin, plotArea_topMargin + plotArea_height );
-		drawCurve( painter, _plotSample.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkGreen, 0.01 );
+	// ** UPPER AXIS ** //
+	painter.translate( plotArea_sideMargin, plotArea_topMargin + plotArea_height );
+	drawCurve( painter, _plotSample.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkGreen, 0.01 );
 
-		// ** LOWER AXIS ** //
-		painter.translate( 0, 2 * (plotArea_topMargin + plotArea_height) );
-		drawCurve( painter, _plotAutoCorr.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkBlue, 0 );
+	// ** LOWER AXIS ** //
+	painter.translate( 0, 2 * (plotArea_topMargin + plotArea_height) );
+	drawCurve( painter, _plotAutoCorr.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkBlue, 0 );
 
-		// draw cursor
-		if ( (_estimatedFrequency >= 40.0) && (_estimatedFrequency <= 2000.0) ) {
-			painter.setPen( QPen( Qt::red, 0, Qt::SolidLine ) );
-			painter.drawLine( QPointF( 40.0 / _estimatedFrequency * plotArea_width, -plotArea_height ),
-				QPointF( 40.0 / _estimatedFrequency * plotArea_width, plotArea_height - 1 ) );
-		}
+	// draw cursor
+	if ( (_estimatedFrequency >= 40.0) && (_estimatedFrequency <= 2000.0) ) {
+		painter.setPen( QPen( Qt::red, 0, Qt::SolidLine ) );
+		painter.drawLine( QPointF( 40.0 / _estimatedFrequency * plotArea_width, -plotArea_height ),
+			QPointF( 40.0 / _estimatedFrequency * plotArea_width, plotArea_height - 1 ) );
 	}
 }
 

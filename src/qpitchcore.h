@@ -157,28 +157,9 @@ signals:
 	 */
 	void visualizationDataUpdated(VisualizationData *visData);	//! Signal the level of the input signal.
 
-	/*!
-	 * \param[in] signalPresent flag with the current signal presence
-	 */
-	void updateSignalPresence( bool signalPresent );
-
 protected:
 	//! Main loop of the thread.
 	virtual void run( );
-
-
-private: /* enumerations */
-	//! Status of the visualization used to handle silence in the input stream.
-	enum VisualizationStatus {
-		STOPPED,
-		STOP_REQUEST,
-		START_REQUEST,
-		RUNNING
-		};
-
-private: /* static constants */
-	static const int 	SIGNAL_THRESHOLD_ON;					//!< Value of the threshold above which the processing is activated
-	static const int 	SIGNAL_THRESHOLD_OFF;					//!< Value of the threshold below which the input audio signal is deactivated
 
 
 private: /* members */
@@ -209,7 +190,6 @@ private: /* members */
 
 	// ** TEMPORARY BUFFERS USED FOR VISUALIZATION ** //
 	VisualizationData   _visualizationData;						//!< Visualization data shared with the UI thread
-	VisualizationStatus	_visualizationStatus;					//!< Visualization status used to handle silence
 
 private: /* methods */
 	//! Start an input audio stream.

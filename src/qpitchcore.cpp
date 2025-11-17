@@ -36,11 +36,6 @@ class QPitchCorePrivate {
 };
 
 
-// ** INITIALIZATION OF STATIC VARIABLES ** //
-const int QPitchCore::SIGNAL_THRESHOLD_ON	= 100;
-const int QPitchCore::SIGNAL_THRESHOLD_OFF	= 20;
-
-
 QPitchCore::QPitchCore( QObject* parent, const unsigned int plotPlot_size, QPitchCoreOptions options) :
 	QThread( parent ),
 	_options(options),
@@ -244,9 +239,6 @@ void QPitchCore::run( )
 	// ** ENSURE THAT FFTW STRUCTURES ARE VALID ** //
 	Q_ASSERT( _pitchDetection );
 
-	// initialize the visualization status
-	_visualizationStatus = STOPPED;
-
 	{
 		QMutexLocker locker(&_mutex);
 		while(true) {
@@ -258,7 +250,6 @@ void QPitchCore::run( )
 			// lock the buffer
 			if ( _stopRequested ) {
 				qDebug("Stop requested! Stop!");
-				_visualizationStatus = STOPPED;
 				break;
 			}
 
@@ -331,12 +322,6 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker) {
 		fftw_in_time[k] = _tmp_sample_buffer[k];
 	}
 
-	// Currently we always assume there is a signal.
-	// TODO: Find a way detect the volume of the wave, and tell if there is a silence.
-	if ( _visualizationStatus == STOPPED ) {
-		_visualizationStatus = START_REQUEST;
-	}
-
 	// downsample factor used to extract a buffer with a time range of 50 milliseconds
 	unsigned int fftw_in_downsampleFactor;
 	if ( _options.sampleFrequency == 44100.0 ) {
@@ -392,15 +377,6 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker) {
 	}
 
 	emit visualizationDataUpdated(&_visualizationData);
-
-	// manage the visualization status
-	if ( _visualizationStatus == STOP_REQUEST ) {
-		emit updateSignalPresence( false );
-		_visualizationStatus = STOPPED;
-	} else if ( _visualizationStatus == START_REQUEST ) {
-		emit updateSignalPresence( true );
-		_visualizationStatus = RUNNING;
-	}
 
 	locker.relock();
 }

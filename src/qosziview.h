@@ -78,13 +78,6 @@ public slots:
 	 */
 	void setPlotAutoCorr( const double* plotAutoCorr, double estimatedFrequency );
 
-	//! Enable the plot area, and display a blank axis box if disabled.
-	/*!
-	 * \param[in] enabled flag with the activation status of the plot area
-	 */
-	void setPlotEnabled( bool enabled );
-
-
 protected: /* methods */
 	//! Function called to handle a repaint request.
 	/*!
@@ -117,7 +110,6 @@ private: /* members */
 
 	// ** REPAINT FLAG **//
 	bool				_drawBackground;				//!< Redraw everything when true, otherwise redraw only the note scale
-	bool				_drawForeground;				//!< Draw the note cursor when true, otherwise draw nothing
 	QPicture			_picture;						//!< QPicture used to store the background to reduce the load
 
 	// ** PLOT PARAMETERS ** //

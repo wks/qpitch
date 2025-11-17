@@ -85,11 +85,6 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 	connect( _hQPitchCore, &QPitchCore::visualizationDataUpdated,
 		this, &QPitch::onVisualizationDataUpdated);
 
-	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
-		_gt.widget_qosziview, &QOsziView::setPlotEnabled);
-	connect( _hQPitchCore, &QPitchCore::updateSignalPresence,
-		this, &QPitch::setUpdateEnabled);
-
 	connect( _hQPitchCore, &QPitchCore::portAudioStreamStarted,
 		this, &QPitch::onPortAudioStreamStarted);
 
@@ -109,14 +104,6 @@ QPitch::~QPitch( )
 	// ** ENSURE THAT THE DATA ARE VALID ** //
 	Q_ASSERT( _hQPitchCore	!= NULL );
 }
-
-
-void QPitch::setUpdateEnabled( bool enabled )
-{
-	// ** STORE UPDATE STATUS ** //
-	_lineEditEnabled = enabled;
-}
-
 
 void QPitch::closeEvent( QCloseEvent* /* event */ )
 {
@@ -210,19 +197,17 @@ void QPitch::updateQPitchGui( )
 	_gt.widget_qlogview->update( );
 	_gt.widget_freqDiff->update();
 
-	if ( _lineEditEnabled == true ) {
-		// ** UPDATE LABELS ** //
-		if (_estimatedNote) {
-			const EstimatedNote &estimatedNote = _estimatedNote.value();
-			_gt.lineEdit_note->setText( QString( "%1 Hz" ).arg( estimatedNote.noteFrequency, 0, 'f', 2 ) );
-			_gt.lineEdit_frequency->setText( QString( "%1 Hz" ).arg( estimatedNote.estimatedFrequency, 0, 'f', 2 ) );
-			_gt.lineEdit_cents->setText(QString("%1").arg(estimatedNote.currentPitchDeviation * 100.0));
-		} else {
-			// if frequencies are out of range clear widgets
-			_gt.lineEdit_note->clear( );
-			_gt.lineEdit_frequency->clear( );
-			_gt.lineEdit_cents->clear();
-		}
+	// ** UPDATE LABELS ** //
+	if (_estimatedNote) {
+		const EstimatedNote &estimatedNote = _estimatedNote.value();
+		_gt.lineEdit_note->setText( QString( "%1 Hz" ).arg( estimatedNote.noteFrequency, 0, 'f', 2 ) );
+		_gt.lineEdit_frequency->setText( QString( "%1 Hz" ).arg( estimatedNote.estimatedFrequency, 0, 'f', 2 ) );
+		_gt.lineEdit_cents->setText(QString("%1").arg(estimatedNote.currentPitchDeviation * 100.0));
+	} else {
+		// if frequencies are out of range clear widgets
+		_gt.lineEdit_note->clear( );
+		_gt.lineEdit_frequency->clear( );
+		_gt.lineEdit_cents->clear();
 	}
 
 	_gt.lineEdit_fps->setText(QString("%1").arg(fp.get_fps()));

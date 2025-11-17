@@ -55,15 +55,6 @@ public: /* methods */
 	//! Deafult destructor.
 	~QPitch( );
 
-
-public slots:
-	//! Enable the update of the estimated and detected frequencies.
-	/*!
-	 * \param[in] enabled the status of GUI
-	 */
-	void setUpdateEnabled( bool enabled );
-
-
 protected: /* methods */
 	//! Function called when the main window is closed.
 	/*!
@@ -97,7 +88,6 @@ private: /* members */
 	QLabel				_sb_labelDeviceInfo;			//!< Label with the device information
 
 	// ** MISC UI PROPERTIES ** //
-	bool				_lineEditEnabled;				//!< Flag to disable the update of the frequency estimation
 	bool				_compactModeActivated;			//!< Flag to request a widget resize to the compact mode
 
 	// ** PITCH ESTIMATION ** //
