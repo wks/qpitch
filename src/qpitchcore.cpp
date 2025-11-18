@@ -104,16 +104,31 @@ void QPitchCore::startStream()
 	// Parameters of the input audio stream
 	PaStreamParameters	inputParameters;
 
-	// Prefer the PulseAudio backend.  (But why does PortAudio still not support PipeWire?)
-	inputParameters.device = -1;
-	for (int i = 0, end = Pa_GetDeviceCount(); i != end; ++i) {
-		PaDeviceInfo const* info = Pa_GetDeviceInfo(i);
-		if (!info) continue;
-		if (strcmp(info->name, "pulse") == 0) {
-			inputParameters.device = i;
-			break;
+	for (int i = 0, end = Pa_GetHostApiCount(); i != end; ++i) {
+		const PaHostApiInfo *hostAPIInfo = Pa_GetHostApiInfo(i);
+		qDebug("Host API %d: %s", i, hostAPIInfo->name);
+		for (int j = 0, end = hostAPIInfo->deviceCount; j != end; ++j) {
+			PaDeviceIndex deviceIndex = Pa_HostApiDeviceIndexToDeviceIndex(i, j);
+			const PaDeviceInfo *info = Pa_GetDeviceInfo(deviceIndex);
+			const char *name = info ? info->name : "no name";
+			qDebug("  %d: [%d] %s", j, deviceIndex, name);
 		}
 	}
+
+	// Prefer the PulseAudio backend.  (But why does PortAudio still not support PipeWire?)
+	inputParameters.device = -1;
+	qDebug("Enumerating PortAudio devices...");
+	for (int i = 0, end = Pa_GetDeviceCount(); i != end; ++i) {
+		PaDeviceInfo const* info = Pa_GetDeviceInfo(i);
+		if (!info) {
+			qDebug("  [%d] no info", i);
+			continue;
+		}
+		qDebug("  [%d] name: %s", i, info->name);
+	}
+
+	qDebug("Default device: %d", Pa_GetDefaultInputDevice());
+	qDebug("Selected device: %d", inputParameters.device);
 
 	// ** CONFIGURE THE INPUT AUDIO STREAM ** //
 	if (inputParameters.device == -1) {
