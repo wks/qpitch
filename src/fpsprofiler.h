@@ -15,6 +15,7 @@ private:
     const char *title;
     bool started = false;
     TimePointType start_time;
+    TimePointType last_time;
     uint64_t tick_count = 0;
     double cur_fps = 0.0;
 };

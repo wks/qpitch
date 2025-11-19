@@ -27,6 +27,8 @@
 #include "visualization_data.h"
 #include "cyclicbuffer.h"
 #include "pitchdetection.h"
+#include "qpitchannotations.h"
+#include "fpsprofiler.h"
 
 //! Definition used to feed the application with a reference squarewave
 //#define _REFERENCE_SQUAREWAVE_INPUT
@@ -145,7 +147,11 @@ public: /* methods */
      *  \param[in] input Pointer to the interleaved input samples.
      *  \param[in] frameCount Number of sample frames to be processed.
      */
-    int paStoreInputBufferCallback( const SampleType* output, unsigned long frameCount );
+    int paStoreInputBufferCallback( const SampleType* output, unsigned long frameCount,
+		const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags );
+
+public slots:
+	void setCallbackProfilingEnabled(bool enabled);
 
 signals:
 	//! Emitted when the port audio stream is started.
@@ -167,29 +173,36 @@ private: /* members */
 	std::unique_ptr<QPitchCorePrivate> _private;				//!< The private structure.
 
 	// ** THREAD SYNCHRONIZATION ** //
-	QMutex				_mutex;									//!< The main Mutex, guarding boolean events fields.
-	QWaitCondition		_cond;									//!< The main CondVar for responding to events.
-	bool 				_bufferUpdated;						    //!< Set to true when the input buffer is filled by the audio backend.
-	bool				_stopRequested;						//!< Set to true when the QPitchCore thread is requested to stop.
+	QMutex				_mutex;										//!< The main Mutex, guarding boolean events fields.
+	QWaitCondition		_cond QPITCH_GUARDED_BY(_mutex);			//!< The main CondVar for responding to events.
+	bool 				_bufferUpdated QPITCH_GUARDED_BY(_mutex);	//!< Set to true when the input buffer is filled by the audio backend.
+	bool				_stopRequested QPITCH_GUARDED_BY(_mutex);	//!< Set to true when the QPitchCore thread is requested to stop.
 
 	// ** SETTABLE OPTIONS ** //
 	QPitchCoreOptions	_options;
-	std::optional<QPitchCoreOptions> _pendingOptions;	// Guarded by _mutex.
+	std::optional<QPitchCoreOptions> _pendingOptions QPITCH_GUARDED_BY(_mutex);
 
 
 	// ** PORTAUDIO STREAM ** //
 	PaStream*			_stream;								//!< Handle to the PortAudio stream
-	unsigned int		_buffer_size;							//!< Size of the internal buffer of the PortAudio stream
 
 	// ** COMMUNICATION WITH PORTAUDIO CALLBACKS ** //
-	CyclicBuffer        _buffer;								//!< Buffer to store the input samples read in the callback
-	std::vector<SampleType>	_tmp_sample_buffer;					//!< A temporary buffer for dumping samples from the cyclic buffer
+	QMutex				_bufferMutex;								//!< A mutex dedicated to _buffer itself.
+	CyclicBuffer        _buffer QPITCH_GUARDED_BY(_bufferMutex);	//!< Buffer to store the input samples read in the callback
+	std::vector<SampleType>	_tmp_sample_buffer;						//!< A temporary buffer for dumping samples from the cyclic buffer
 
 	// ** FFT ** //
 	std::unique_ptr<PitchDetectionContext> _pitchDetection;
 
 	// ** TEMPORARY BUFFERS USED FOR VISUALIZATION ** //
 	VisualizationData   _visualizationData;						//!< Visualization data shared with the UI thread
+
+	// ** CALLBACK PROFILING ** //
+	std::atomic<bool>	_callbackProfilingEnabled;		//!< Set to true to enable callback profiling
+	bool				_callbackProfilingStarted;		//!< Set to true when the callback is called the first time after callback profiling is enabled
+	double				_lastCallbackTime;				//!< The time the last callback was called, as reported by PortAudio
+	double				_lastAdcTime;					//!< The time the ADC captured the first sample in the last callback, as reported by PortAudio
+	FPSProfiler			_callbackProfiler;				//!< FPSProfiler for callback.
 
 private: /* methods */
 	//! Start an input audio stream.

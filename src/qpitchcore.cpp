@@ -26,6 +26,7 @@
 #include <QMutex>
 #include <QtDebug>
 #include <QMutexLocker>
+#include <chrono>
 
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
 	#include <cmath>
@@ -38,15 +39,30 @@ class QPitchCorePrivate {
 
 QPitchCore::QPitchCore( QObject* parent, const unsigned int plotPlot_size, QPitchCoreOptions options) :
 	QThread( parent ),
-	_options(options),
-	_visualizationData(plotPlot_size),
-	_buffer(0),
+	_bufferUpdated(false),
 	_stopRequested(false),
-	_bufferUpdated(false)
+	_options(options),
+	_stream(nullptr),
+	_buffer(0),
+	_visualizationData(plotPlot_size),
+	_callbackProfilingEnabled(false),
+	_callbackProfilingStarted(false),
+	_lastCallbackTime(0.0),
+	_lastAdcTime(0.0),
+	_callbackProfiler("QPitchCore callback", true)
 {
+	{
+		const char *profEnv = getenv("QPITCH_CORE_CALLBACK_PROFILING");
+		if (profEnv != nullptr) {
+			if (strcmp(profEnv, "1") == 0) {
+				qDebug("[QPitchCore callback] Profiling enabled!");
+				_callbackProfilingEnabled = true;
+			}
+		}
+	}
+
 	// ** INITIALIZE PRIVATE VARIABLES ** //
 	_private = std::make_unique<QPitchCorePrivate>();
-	_stream = nullptr;
 
 	// ** INITIALIZE PORTAUDIO ** //
 	PaError err = Pa_Initialize( );
@@ -85,6 +101,10 @@ void QPitchCore::requestStop() {
 	_cond.wakeOne();
 }
 
+void QPitchCore::setCallbackProfilingEnabled(bool enabled) {
+	_callbackProfilingEnabled = enabled;
+}
+
 void QPitchCore::startStream()
 {
 	// This method is only callable by the QPitchCore thread itself.
@@ -104,19 +124,33 @@ void QPitchCore::startStream()
 	// Parameters of the input audio stream
 	PaStreamParameters	inputParameters;
 
+	// We dump the host API and device list for debug purposes.
+	qDebug("Enumerating host APIs...");
 	for (int i = 0, end = Pa_GetHostApiCount(); i != end; ++i) {
 		const PaHostApiInfo *hostAPIInfo = Pa_GetHostApiInfo(i);
 		qDebug("Host API %d: %s", i, hostAPIInfo->name);
 		for (int j = 0, end = hostAPIInfo->deviceCount; j != end; ++j) {
 			PaDeviceIndex deviceIndex = Pa_HostApiDeviceIndexToDeviceIndex(i, j);
 			const PaDeviceInfo *info = Pa_GetDeviceInfo(deviceIndex);
-			const char *name = info ? info->name : "no name";
-			qDebug("  %d: [%d] %s", j, deviceIndex, name);
+			if (info->maxInputChannels > 1) {
+				qDebug("  %d: [%d] %s (%d channels, %lf Hz, %lf ms to %lf ms)",
+					j, deviceIndex, info->name,
+					info->maxInputChannels, info->defaultSampleRate,
+					info->defaultLowInputLatency * 1000, info->defaultHighInputLatency * 1000);
+			} else {
+				qDebug("  %d: [%d] %s (no input)", j, deviceIndex, info->name);
+			}
 		}
 	}
 
-	// Prefer the PulseAudio backend.  (But why does PortAudio still not support PipeWire?)
+	// Prefer the default device.  On Linux, the default host API is ALSA; and on modern Linux
+	// distributions, the default output device is usually "pipewire" which bridges with the
+	// PipeWire sound server.
+	//
+	// TODO: Allow the user to specify a device at runtime via the GUI.
 	inputParameters.device = -1;
+
+	// We list the devices for debug purpose.
 	qDebug("Enumerating PortAudio devices...");
 	for (int i = 0, end = Pa_GetDeviceCount(); i != end; ++i) {
 		PaDeviceInfo const* info = Pa_GetDeviceInfo(i);
@@ -140,13 +174,26 @@ void QPitchCore::startStream()
 	inputParameters.hostApiSpecificStreamInfo	=	NULL;
 
 	// ** OPEN AN AUDIO INPUT STREAM ** //
-	_buffer_size = (unsigned int)((double) inputParameters.suggestedLatency * _options.sampleFrequency);
+
+	// We don't specify the buffer size.  Pa_OpenStream promises that by doing so, "the stream
+	// callback will receive an optimal (and possibly varying) number of frames based on host
+	// requirements and the requested latency settings", and "the use of non-zero framesPerBuffer
+	// for a callback stream may introduce an additional layer of buffering which could introduce
+	// additional latency". Meanwhile, since we are using a cyclic buffer to hold accumulated
+	// samples, we are quite flexible about the buffer size, and we can even handle variable-sized
+	// buffers with ease. Therefore, not specifying the buffer size will allow us to run at the
+	// maximum possible FPS.  On a machine with Linux and PipeWire, we receive about 395 callbacks
+	// per second, with the number of frames per callback ranging from 7 to 183.
+	//
+	// TODO: Allow the user to set (throttle) the frequency at which the QPitchCore processes the
+	// buffer and therefore the GUI refresh rate to the user's desired setting, such as 60 FPS.
+	unsigned long framesPerBuffer = paFramesPerBufferUnspecified;
 	PaError err = Pa_OpenStream(
 		&_stream,
 		&inputParameters,
 		NULL,									// no output
 		_options.sampleFrequency,				// sample rate (default 44100 Hz)
-		(long) _buffer_size,					// frames per buffer
+		framesPerBuffer,						// frames per buffer (not specified)
 		paClipOff,								// disable clipping
         paCallback,                             // callback
 		this									// pointer to user data
@@ -173,7 +220,6 @@ void QPitchCore::startStream()
 	qDebug( ) << "QPitchCore::startStream";
 	qDebug( ) << " - sampleFrequency  = " << _options.sampleFrequency;
 	qDebug( ) << " - suggestedLatency = " << inputParameters.suggestedLatency;
-	qDebug( ) << " - framesPerBuffer  = " << _buffer_size;
 	qDebug( ) << " - fftFrameSize     = " << _options.fftFrameSize << "\n";
 }
 
@@ -206,20 +252,45 @@ void QPitchCore::stopStream( )
 }
 
 int QPitchCore::paCallback( const void* input, void* /*output*/, unsigned long frameCount,
-		const PaStreamCallbackTimeInfo* /*timeInfo*/, PaStreamCallbackFlags /*statusFlags*/, void* userData )
+		const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags, void* userData )
 {
 	Q_ASSERT( input		!= NULL );
 	Q_ASSERT( userData	!= NULL );
 
-    return( static_cast<QPitchCore*>( userData )->paStoreInputBufferCallback( (const SampleType*)input, frameCount ) );
+    return( static_cast<QPitchCore*>( userData )->paStoreInputBufferCallback( (const SampleType*)input, frameCount,
+		timeInfo, statusFlags ) );
 }
 
-int QPitchCore::paStoreInputBufferCallback( const SampleType* input, unsigned long frameCount )
+int QPitchCore::paStoreInputBufferCallback( const SampleType* input, unsigned long frameCount,
+		const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags)
 {
 	Q_ASSERT(QThread::currentThread() != this);
 
-    QMutexLocker locker(&_mutex);
-    if ( !_bufferUpdated ) {
+	bool profilingEnabled = _callbackProfilingEnabled;
+
+	std::chrono::time_point<std::chrono::steady_clock> callbackEnter;
+
+	if (profilingEnabled) {
+		_callbackProfiler.tick();
+
+		if (!_callbackProfilingStarted) {
+			_callbackProfilingStarted = true;
+		} else {
+			double callbackDiff = timeInfo->currentTime - _lastCallbackTime;
+			double adcDiff = timeInfo->inputBufferAdcTime - _lastAdcTime;
+			qDebug("[QPitchCore callback] Time profiling: callback: %lf (+%lf), ADC: %lf (+%lf), frames: %ld",
+				timeInfo->currentTime, callbackDiff, timeInfo->inputBufferAdcTime, adcDiff, frameCount);
+		}
+
+		_lastCallbackTime = timeInfo->currentTime;
+		_lastAdcTime = timeInfo->inputBufferAdcTime;
+
+		callbackEnter = std::chrono::steady_clock::now();
+	}
+
+	{
+		QMutexLocker bufferLocker(&_bufferMutex);
+
         // ** COPY BUFFER ** //
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
         // ** USE THE REFERENCE SINE WAVE INPUT SIGNAL ** //
@@ -233,15 +304,34 @@ int QPitchCore::paStoreInputBufferCallback( const SampleType* input, unsigned lo
         // ** READ THE REAL AUDIO SIGNAL ** //
         _buffer.append((const unsigned char*)input, frameCount * sizeof( SampleType ) );
 #endif
+	}
+
+	// ** NOTIFY THE QPITCHCORE THREAD TO PROCESS THE BUFFER ** //
+	bool bufferWasUpdated = false;
+	{
+    	QMutexLocker locker(&_mutex);
+
+		// Note that the callback can update the buffer faster than the QPitchCore thread can
+		// handle. This is normal.  Samples will be accumulated into the cyclic buffer, and the
+		// QPitchCore thread always processes the accumulated samples.  But for performance
+		// analysis, we record the old value of _bufferUpdated to see if the QPitchCore can keep up
+		// with the callback.
+		bufferWasUpdated = _bufferUpdated;
 
 		_bufferUpdated = true;
+		_cond.wakeOne( );
+	}
 
-        // Let the QPitchCore thread process the filled buffer.
-        _cond.wakeOne( );
-    } else {
-        // buffer is not processed since the last callback
-        qDebug() << "QPitch: buffer full, dropping " << frameCount << " samples!\n";
-    }
+	if (profilingEnabled) {
+		std::chrono::time_point<std::chrono::steady_clock> callbackExit = std::chrono::steady_clock::now();
+		double callbackDuration = std::chrono::duration<double>(callbackExit - callbackEnter).count();
+		qDebug("[QPitchCore callback] Callback duration: %lf", callbackDuration);
+
+		if ( _bufferUpdated ) {
+			// buffer is not processed since the last callback
+			qDebug("[QPitchCore callback] The QPitchCore thread failed to keep up with the callback!");
+		}
+	}
 
 	return paContinue;
 }
@@ -322,13 +412,23 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker) {
 	Q_ASSERT(_bufferUpdated);
 	Q_ASSERT(_pitchDetection);
 
-	// Dump the samples out of the cyclic buffer.
-	size_t bytes_copied = _buffer.copyLastBytes((unsigned char*)_tmp_sample_buffer.data(), _options.fftFrameSize * sizeof(SampleType));
-	size_t frames_copied = bytes_copied / sizeof(SampleType);
-	_bufferUpdated = false;
-
-	// No need to keep the lock after we copied the buffer contents.
+	// No need to keep the lock when we copy the buffer contents.
 	locker.unlock();
+
+	size_t frames_copied;
+	{
+		QMutexLocker bufferLocker(&_bufferMutex);
+		// Dump the samples out of the cyclic buffer.
+		size_t bytes_copied = _buffer.copyLastBytes((unsigned char*)_tmp_sample_buffer.data(), _options.fftFrameSize * sizeof(SampleType));
+		frames_copied = bytes_copied / sizeof(SampleType);
+	}
+
+	{
+		locker.relock();
+		// This is for notifying the callback thread.
+		_bufferUpdated = false;
+		locker.unlock();
+	}
 
 	// Transfer the samples to _pitchDetection, converting sample format (float -> double) at the same time.
 	double *fftw_in_time = _pitchDetection->getInputBuffer();
