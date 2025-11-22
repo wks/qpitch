@@ -12,8 +12,8 @@ enum class TuningNotation {
 
 struct EstimatedNote {
     double  estimatedFrequency;
-	int		currentPitch;					//!< Frequency of the closest note in the scale
-	double	currentPitchDeviation;			//!< percentuale da -0.5 a +0.5 che dice di quanto va disegnato spostato
+    int     currentPitch;                   //!< Frequency of the closest note in the scale
+    double  currentPitchDeviation;          //!< percentuale da -0.5 a +0.5 che dice di quanto va disegnato spostato
     double  noteFrequency;
 };
 
@@ -33,12 +33,12 @@ public:
     std::optional<EstimatedNote> estimateNote(double estimatedFrequency) const;
 
 public:
-	static const double	D_NOTE;							//!< Ratio of two consecutive notes for pitch detection
-	static const double	D_NOTE_LOG;						//!< Ratio of two consecutive notes for visualization
+    static const double D_NOTE;                         //!< Ratio of two consecutive notes for pitch detection
+    static const double D_NOTE_LOG;                     //!< Ratio of two consecutive notes for visualization
 
 private:
-	double				_fundamentalFrequency;			//!< Fundamental frequency used as a reference to build the pitch scale
-	TuningNotation		_tuningNotation;				//!< Musical notation used to select the string displayed
-	double				_noteFrequency[12];				//!< Frequencies of the notes in the reference octave used for pitch detection
-	double				_noteScale[12];					//!< Scale of the notes in the reference octave used for visualization
+    double              _fundamentalFrequency;          //!< Fundamental frequency used as a reference to build the pitch scale
+    TuningNotation      _tuningNotation;                //!< Musical notation used to select the string displayed
+    double              _noteFrequency[12];             //!< Frequencies of the notes in the reference octave used for pitch detection
+    double              _noteScale[12];                 //!< Scale of the notes in the reference octave used for visualization
 };

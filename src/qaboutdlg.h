@@ -34,18 +34,18 @@
 
 
 class QAboutDlg : public QDialog {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	//! Deafult constructor.
-	/*!
-	 * \param[in] parent handle to the parent widget
-	 */
-	QAboutDlg( QWidget* parent = 0 );
+    //! Deafult constructor.
+    /*!
+     * \param[in] parent handle to the parent widget
+     */
+    QAboutDlg( QWidget* parent = 0 );
 
 private:
-	// ** Qt WIDGETS ** //
-	Ui::QAboutDlg		_ab;							//!< Dialog created with Qt-Designer
+    // ** Qt WIDGETS ** //
+    Ui::QAboutDlg       _ab;                            //!< Dialog created with Qt-Designer
 };
 
 #endif /* __QABOUTDLG_H_ */

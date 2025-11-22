@@ -12,40 +12,40 @@ set(CMAKE_AUTOUIC_SEARCH_PATHS ui)
 
 # set object files dependencies for the executable
 add_executable( qpitch
-	main.cpp
-	qaboutdlg.cpp
-	qlogview.cpp
-	qosziview.cpp
-	qpitch.cpp
-	qpitchcore.cpp
-	qsettingsdlg.cpp
-	fpsprofiler.cpp
-	visualization_data.cpp
-	freqdiffview.cpp
-	notes.cpp
-	cyclicbuffer.cpp
-	qpitchsettings.cpp
-	pitchdetection.cpp
+    main.cpp
+    qaboutdlg.cpp
+    qlogview.cpp
+    qosziview.cpp
+    qpitch.cpp
+    qpitchcore.cpp
+    qsettingsdlg.cpp
+    fpsprofiler.cpp
+    visualization_data.cpp
+    freqdiffview.cpp
+    notes.cpp
+    cyclicbuffer.cpp
+    qpitchsettings.cpp
+    pitchdetection.cpp
 
-	qaboutdlg.h
-	qlogview.h
-	qosziview.h
-	qpitchcore.h
-	qpitch.h
-	qsettingsdlg.h
-	fpsprofiler.h
-	visualization_data.h
-	freqdiffview.h
-	notes.h
-	cyclicbuffer.h
-	qpitchsettings.h
-	pitchdetection.h
+    qaboutdlg.h
+    qlogview.h
+    qosziview.h
+    qpitchcore.h
+    qpitch.h
+    qsettingsdlg.h
+    fpsprofiler.h
+    visualization_data.h
+    freqdiffview.h
+    notes.h
+    cyclicbuffer.h
+    qpitchsettings.h
+    pitchdetection.h
 
-	ui/qpitch.qrc
+    ui/qpitch.qrc
 
-	ui/qaboutdlg.ui
-	ui/qpitch.ui
-	ui/qsettingsdlg.ui
+    ui/qaboutdlg.ui
+    ui/qpitch.ui
+    ui/qsettingsdlg.ui
 )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -54,32 +54,32 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # by FIND_PACKAGE)
 target_link_libraries( qpitch
     Qt::Widgets
-	${PORTAUDIO_LIBRARIES}
-	${FFTW3_LIBRARIES}
+    ${PORTAUDIO_LIBRARIES}
+    ${FFTW3_LIBRARIES}
 )
 
 
 # where to install files
 install(
-	TARGETS qpitch
+    TARGETS qpitch
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 install(
-	FILES ${CMAKE_CURRENT_SOURCE_DIR}/ui/icons/qpitch.xpm
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/ui/icons/qpitch.xpm
     DESTINATION ${CMAKE_INSTALL_DATADIR}/pixmaps/
 )
 
 install(
-	FILES ${CMAKE_CURRENT_SOURCE_DIR}/data/qpitch.desktop
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/data/qpitch.desktop
     DESTINATION ${CMAKE_INSTALL_DATADIR}/applications/
 )
 
 qt_add_executable(cyclicbuffertest
-	tst_cyclicbuffertest.cpp
-	tst_cyclicbuffertest.h
-	cyclicbuffer.cpp
-	cyclicbuffer.h
+    tst_cyclicbuffertest.cpp
+    tst_cyclicbuffertest.h
+    cyclicbuffer.cpp
+    cyclicbuffer.h
 )
 
 add_test(NAME cyclicbuffertest COMMAND cyclicbuffertest)

@@ -31,101 +31,101 @@
 #include <QTimer>
 
 // ** CONSTANTS ** //
-const int QPitch::PLOT_BUFFER_SIZE = 551;		// 44100 * 0.05 / 4 = 551.25
-													// size computed to have a time range of 50 ms with an integer downsample ratio
-													// sample rate = 44100 Hz --> downsample ratio = 4
-													// sample rate = 22050 Hz --> downsample ratio = 2
+const int QPitch::PLOT_BUFFER_SIZE = 551;       // 44100 * 0.05 / 4 = 551.25
+                                                    // size computed to have a time range of 50 ms with an integer downsample ratio
+                                                    // sample rate = 44100 Hz --> downsample ratio = 4
+                                                    // sample rate = 22050 Hz --> downsample ratio = 2
 
 
 QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 {
-	// ** SETUP THE MAIN WINDOW ** //
-	_gt.setupUi( this );
+    // ** SETUP THE MAIN WINDOW ** //
+    _gt.setupUi( this );
 
-	_settings.load();
+    _settings.load();
 
-	// ** REJECT MOUSE EVENT FOR QLINEEDIT ** //
-	_gt.lineEdit_note->installEventFilter( this );
-	_gt.lineEdit_frequency->installEventFilter( this );
+    // ** REJECT MOUSE EVENT FOR QLINEEDIT ** //
+    _gt.lineEdit_note->installEventFilter( this );
+    _gt.lineEdit_frequency->installEventFilter( this );
 
-	// ** INITIALIZE TUNING PARAMETERS ** //
-	_tuningParameters = std::make_shared<TuningParameters>(_settings.fundamentalFrequency, _settings.tuningNotation);
+    // ** INITIALIZE TUNING PARAMETERS ** //
+    _tuningParameters = std::make_shared<TuningParameters>(_settings.fundamentalFrequency, _settings.tuningNotation);
 
-	// ** INTIALIZE QPITCH CORE ** //
-	QPitchCoreOptions pitchCoreOptions {
-		.sampleFrequency = _settings.sampleFrequency,
-		.fftFrameSize = _settings.fftFrameSize,
-		.tuningParameters = *_tuningParameters,
-	};
+    // ** INTIALIZE QPITCH CORE ** //
+    QPitchCoreOptions pitchCoreOptions {
+        .sampleFrequency = _settings.sampleFrequency,
+        .fftFrameSize = _settings.fftFrameSize,
+        .tuningParameters = *_tuningParameters,
+    };
 
-	try {
-		_hQPitchCore = new QPitchCore(this, PLOT_BUFFER_SIZE, std::move(pitchCoreOptions));
-	} catch ( QPaSoundInputException& e ) {
-		e.report( );
-	}
+    try {
+        _hQPitchCore = new QPitchCore(this, PLOT_BUFFER_SIZE, std::move(pitchCoreOptions));
+    } catch ( QPaSoundInputException& e ) {
+        e.report( );
+    }
 
-	// ** INITIALIZE CUSTOM WIDGETS ** //
-	_gt.widget_qlogview->setTuningParameters(_tuningParameters);
-	_gt.widget_qosziview->setBufferSize( PLOT_BUFFER_SIZE );
+    // ** INITIALIZE CUSTOM WIDGETS ** //
+    _gt.widget_qlogview->setTuningParameters(_tuningParameters);
+    _gt.widget_qosziview->setBufferSize( PLOT_BUFFER_SIZE );
 
-	// ** SETUP THE CONNECTIONS ** //
-	// File menu
-	connect( _gt.action_preferences, &QAction::triggered,
-		this, &QPitch::showPreferencesDialog);
-	connect( _gt.action_compactView, &QAction::triggered,
-		this, &QPitch::setViewCompactMode);
+    // ** SETUP THE CONNECTIONS ** //
+    // File menu
+    connect( _gt.action_preferences, &QAction::triggered,
+        this, &QPitch::showPreferencesDialog);
+    connect( _gt.action_compactView, &QAction::triggered,
+        this, &QPitch::setViewCompactMode);
 
-	// Help menu
-	connect( _gt.action_about, &QAction::triggered,
-		this, &QPitch::showAboutDialog);
-	connect( _gt.action_aboutQt, &QAction::triggered,
-		qApp, &QApplication::aboutQt);
+    // Help menu
+    connect( _gt.action_about, &QAction::triggered,
+        this, &QPitch::showAboutDialog);
+    connect( _gt.action_aboutQt, &QAction::triggered,
+        qApp, &QApplication::aboutQt);
 
-	// Internal connections
-	connect( _hQPitchCore, &QPitchCore::visualizationDataUpdated,
-		this, &QPitch::onVisualizationDataUpdated);
+    // Internal connections
+    connect( _hQPitchCore, &QPitchCore::visualizationDataUpdated,
+        this, &QPitch::onVisualizationDataUpdated);
 
-	connect( _hQPitchCore, &QPitchCore::portAudioStreamStarted,
-		this, &QPitch::onPortAudioStreamStarted);
+    connect( _hQPitchCore, &QPitchCore::portAudioStreamStarted,
+        this, &QPitch::onPortAudioStreamStarted);
 
-	// ** START THE QPITCH CORE THREAD ** //
-	Q_ASSERT( _hQPitchCore != NULL );
-	_hQPitchCore->start();
+    // ** START THE QPITCH CORE THREAD ** //
+    Q_ASSERT( _hQPitchCore != NULL );
+    _hQPitchCore->start();
 
-	// ** REMOVE MAXIMIZE BUTTON ** //
-	Qt::WindowFlags flags = windowFlags( );
-	flags &= ~Qt::WindowMaximizeButtonHint;
-	setWindowFlags( flags );
+    // ** REMOVE MAXIMIZE BUTTON ** //
+    Qt::WindowFlags flags = windowFlags( );
+    flags &= ~Qt::WindowMaximizeButtonHint;
+    setWindowFlags( flags );
 }
 
 
 QPitch::~QPitch( )
 {
-	// ** ENSURE THAT THE DATA ARE VALID ** //
-	Q_ASSERT( _hQPitchCore	!= NULL );
+    // ** ENSURE THAT THE DATA ARE VALID ** //
+    Q_ASSERT( _hQPitchCore  != NULL );
 }
 
 void QPitch::closeEvent( QCloseEvent* /* event */ )
 {
-	// ** ENSURE THAT THE DATA ARE VALID ** //
-	Q_ASSERT( _hQPitchCore	!= NULL );
+    // ** ENSURE THAT THE DATA ARE VALID ** //
+    Q_ASSERT( _hQPitchCore  != NULL );
 
-	_settings.store();
+    _settings.store();
 
-	// TODO: Ensure the QPitchCore doesn't see the QPitchCore instance destructed.
-	_hQPitchCore->requestStop();
+    // TODO: Ensure the QPitchCore doesn't see the QPitchCore instance destructed.
+    _hQPitchCore->requestStop();
 }
 
 
 bool QPitch::eventFilter( QObject* watched, QEvent* event )
 {
-	if ( ( (watched == _gt.lineEdit_note) || (watched == _gt.lineEdit_frequency) ) &&
-		( (event->type( ) >= QEvent::MouseButtonPress) && (event->type( ) <= QEvent::MouseMove) ) ) {
-    	// ignore event
-		return true;
+    if ( ( (watched == _gt.lineEdit_note) || (watched == _gt.lineEdit_frequency) ) &&
+        ( (event->type( ) >= QEvent::MouseButtonPress) && (event->type( ) <= QEvent::MouseMove) ) ) {
+        // ignore event
+        return true;
     } else {
-    	// standard event processing
-    	return QObject::eventFilter( watched, event );
+        // standard event processing
+        return QObject::eventFilter( watched, event );
     }
 }
 
@@ -133,107 +133,107 @@ bool QPitch::eventFilter( QObject* watched, QEvent* event )
 
 void QPitch::showPreferencesDialog( )
 {
-	// ** ENSURE THAT THE DATA ARE VALID ** //
-	Q_ASSERT( _hQPitchCore	!= NULL );
+    // ** ENSURE THAT THE DATA ARE VALID ** //
+    Q_ASSERT( _hQPitchCore  != NULL );
 
-	// ** SHOW PREFERENCES DIALOG ** //
-	QSettingsDlg as( _settings, this );
+    // ** SHOW PREFERENCES DIALOG ** //
+    QSettingsDlg as( _settings, this );
 
-	int execResult = as.exec();
+    int execResult = as.exec();
 
-	if (execResult == QDialog::Accepted) {
-		_settings = as.result();
-		setApplicationSettings();
-	}
+    if (execResult == QDialog::Accepted) {
+        _settings = as.result();
+        setApplicationSettings();
+    }
 }
 
 void QPitch::setApplicationSettings()
 {
-	// ** UPDATE NOTE SCALE ** //
-	_tuningParameters->setParameters(_settings.fundamentalFrequency, _settings.tuningNotation );
+    // ** UPDATE NOTE SCALE ** //
+    _tuningParameters->setParameters(_settings.fundamentalFrequency, _settings.tuningNotation );
 
-	// ** INTIALIZE QPITCH CORE ** //
-	QPitchCoreOptions pitchCoreOptions {
-		.sampleFrequency = _settings.sampleFrequency,
-		.fftFrameSize = _settings.fftFrameSize,
-		.tuningParameters = *_tuningParameters,
-	};
+    // ** INTIALIZE QPITCH CORE ** //
+    QPitchCoreOptions pitchCoreOptions {
+        .sampleFrequency = _settings.sampleFrequency,
+        .fftFrameSize = _settings.fftFrameSize,
+        .tuningParameters = *_tuningParameters,
+    };
 
-	_hQPitchCore->setOptions(std::move(pitchCoreOptions));
+    _hQPitchCore->setOptions(std::move(pitchCoreOptions));
 }
 
 
 
 void QPitch::showAboutDialog( )
 {
-	// ** SHOW ABOUT DIALOG ** //
-	QAboutDlg ab( this );
-	ab.exec( );
+    // ** SHOW ABOUT DIALOG ** //
+    QAboutDlg ab( this );
+    ab.exec( );
 }
 
 
 void QPitch::setViewCompactMode( bool enabled )
 {
-	// ** MANAGE COMPACT MODE ** //
-	if ( enabled == true ) {
-		setMinimumSize(800, 600 - _gt.widget_qosziview->height( ) - 6 );
-		setMaximumSize(800, 600 - _gt.widget_qosziview->height( ) - 6 );
-		_gt.widget_qosziview->setVisible( false );
-		_compactModeActivated = true;
-	} else {
-		_gt.widget_qosziview->setVisible( true );
-		setMinimumSize(800, 600);
-		setMaximumSize(800, 600);
-	}
+    // ** MANAGE COMPACT MODE ** //
+    if ( enabled == true ) {
+        setMinimumSize(800, 600 - _gt.widget_qosziview->height( ) - 6 );
+        setMaximumSize(800, 600 - _gt.widget_qosziview->height( ) - 6 );
+        _gt.widget_qosziview->setVisible( false );
+        _compactModeActivated = true;
+    } else {
+        _gt.widget_qosziview->setVisible( true );
+        setMinimumSize(800, 600);
+        setMaximumSize(800, 600);
+    }
 }
 
 void QPitch::updateQPitchGui( )
 {
-	static FPSProfiler fp("updateQPitchGui");
-	fp.tick();
+    static FPSProfiler fp("updateQPitchGui");
+    fp.tick();
 
-	// ** UPDATE WIDGETS ** //
-	_gt.widget_qosziview->update( );
-	_gt.widget_qlogview->update( );
-	_gt.widget_freqDiff->update();
+    // ** UPDATE WIDGETS ** //
+    _gt.widget_qosziview->update( );
+    _gt.widget_qlogview->update( );
+    _gt.widget_freqDiff->update();
 
-	// ** UPDATE LABELS ** //
-	if (_estimatedNote) {
-		const EstimatedNote &estimatedNote = _estimatedNote.value();
-		_gt.lineEdit_note->setText( QString( "%1 Hz" ).arg( estimatedNote.noteFrequency, 0, 'f', 2 ) );
-		_gt.lineEdit_frequency->setText( QString( "%1 Hz" ).arg( estimatedNote.estimatedFrequency, 0, 'f', 2 ) );
-		_gt.lineEdit_cents->setText(QString("%1").arg(estimatedNote.currentPitchDeviation * 100.0));
-	} else {
-		// if frequencies are out of range clear widgets
-		_gt.lineEdit_note->clear( );
-		_gt.lineEdit_frequency->clear( );
-		_gt.lineEdit_cents->clear();
-	}
+    // ** UPDATE LABELS ** //
+    if (_estimatedNote) {
+        const EstimatedNote &estimatedNote = _estimatedNote.value();
+        _gt.lineEdit_note->setText( QString( "%1 Hz" ).arg( estimatedNote.noteFrequency, 0, 'f', 2 ) );
+        _gt.lineEdit_frequency->setText( QString( "%1 Hz" ).arg( estimatedNote.estimatedFrequency, 0, 'f', 2 ) );
+        _gt.lineEdit_cents->setText(QString("%1").arg(estimatedNote.currentPitchDeviation * 100.0));
+    } else {
+        // if frequencies are out of range clear widgets
+        _gt.lineEdit_note->clear( );
+        _gt.lineEdit_frequency->clear( );
+        _gt.lineEdit_cents->clear();
+    }
 
-	_gt.lineEdit_fps->setText(QString("%1").arg(fp.get_fps()));
+    _gt.lineEdit_fps->setText(QString("%1").arg(fp.get_fps()));
 
-	if ( _compactModeActivated == true ) {
-		resize( minimumSize( ) );
-		_compactModeActivated = false;
-	}
+    if ( _compactModeActivated == true ) {
+        resize( minimumSize( ) );
+        _compactModeActivated = false;
+    }
 }
 
 void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
-	{
-		QMutexLocker visDataLocker(&visData->mutex);
-		_gt.widget_qosziview->setPlotSamples(visData->plotSample.data(), visData->timeRangeSample);
-		_gt.widget_qosziview->setPlotAutoCorr(visData->plotAutoCorr.data(), visData->estimatedFrequency);
-		_gt.widget_qlogview->setEstimatedNote(visData->estimatedNote);
-		_estimatedNote = visData->estimatedNote;
-		_gt.widget_freqDiff->setEstimatedNote(visData->estimatedNote);
-	}
-	updateQPitchGui();
+    {
+        QMutexLocker visDataLocker(&visData->mutex);
+        _gt.widget_qosziview->setPlotSamples(visData->plotSample.data(), visData->timeRangeSample);
+        _gt.widget_qosziview->setPlotAutoCorr(visData->plotAutoCorr.data(), visData->estimatedFrequency);
+        _gt.widget_qlogview->setEstimatedNote(visData->estimatedNote);
+        _estimatedNote = visData->estimatedNote;
+        _gt.widget_freqDiff->setEstimatedNote(visData->estimatedNote);
+    }
+    updateQPitchGui();
 }
 
 void QPitch::onPortAudioStreamStarted(QString device, QString hostApi) {
-	// ** SETUP THE STATUS BAR ** //
-	QString msg = QString("Device: %1, Host API: %2").arg(device).arg(hostApi);
-	_sb_labelDeviceInfo.setText( msg );
-	_sb_labelDeviceInfo.setIndent( 10 );
-	_gt.statusbar->addWidget( &_sb_labelDeviceInfo, 1 );
+    // ** SETUP THE STATUS BAR ** //
+    QString msg = QString("Device: %1, Host API: %2").arg(device).arg(hostApi);
+    _sb_labelDeviceInfo.setText( msg );
+    _sb_labelDeviceInfo.setIndent( 10 );
+    _gt.statusbar->addWidget( &_sb_labelDeviceInfo, 1 );
 }

@@ -4,10 +4,10 @@
 
 //! Structure holding the application settings
 struct QPitchSettings {
-	unsigned int	sampleFrequency;		//!< Current sample rate
-	unsigned int	fftFrameSize;			//!< Current size of the buffer used to compute the FFT
-	double			fundamentalFrequency;	//!< The reference frequency of A4 used to estimate the pitch
-	TuningNotation	tuningNotation;			//!< Current tuning notation
+    unsigned int    sampleFrequency;        //!< Current sample rate
+    unsigned int    fftFrameSize;           //!< Current size of the buffer used to compute the FFT
+    double          fundamentalFrequency;   //!< The reference frequency of A4 used to estimate the pitch
+    TuningNotation  tuningNotation;         //!< Current tuning notation
 
     // ** METHODS ** //
     QPitchSettings(); //!< Default constructor.  Use default values.

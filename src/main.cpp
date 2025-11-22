@@ -83,14 +83,14 @@ $ make</pre>
 
 int main( int argc, char *argv[] )
 {
-	// ** CREATE QT APPLICATION ** //
-	QApplication app( argc, argv );
+    // ** CREATE QT APPLICATION ** //
+    QApplication app( argc, argv );
 
-	// ** OPEN MAIN WINDOW ** //
-	QPitch* qpitch = new QPitch( );
-	qpitch->show( );
+    // ** OPEN MAIN WINDOW ** //
+    QPitch* qpitch = new QPitch( );
+    qpitch->show( );
 
-	// ** GIVE CONTROL TO QT ** //
-	return app.exec( );
+    // ** GIVE CONTROL TO QT ** //
+    return app.exec( );
 }
 

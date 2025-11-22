@@ -42,81 +42,81 @@ class QTimer;
  */
 
 class QPitch : public QMainWindow {
-	Q_OBJECT
+    Q_OBJECT
 
 
 public: /* methods */
-	//! Deafult constructor.
-	/*!
-	 * \param[in] parent handle to the parent widget
-	 */
-	QPitch( QMainWindow* parent = 0 );
+    //! Deafult constructor.
+    /*!
+     * \param[in] parent handle to the parent widget
+     */
+    QPitch( QMainWindow* parent = 0 );
 
-	//! Deafult destructor.
-	~QPitch( );
+    //! Deafult destructor.
+    ~QPitch( );
 
 protected: /* methods */
-	//! Function called when the main window is closed.
-	/*!
-	 * \param[in] event details of the close event
-	 */
-	virtual void closeEvent( QCloseEvent* event );
+    //! Function called when the main window is closed.
+    /*!
+     * \param[in] event details of the close event
+     */
+    virtual void closeEvent( QCloseEvent* event );
 
-	//! Function called to handle generic events.
-	/*!
-	 * \param[in] watched the object that has emitted the event
-	 * \param[in] event details of the event to be processed
-	 */
-	virtual bool eventFilter( QObject* watched, QEvent* event );
+    //! Function called to handle generic events.
+    /*!
+     * \param[in] watched the object that has emitted the event
+     * \param[in] event details of the event to be processed
+     */
+    virtual bool eventFilter( QObject* watched, QEvent* event );
 
 
 private: /* static constants */
-	// ** BUFFER SIZE ** //
-	static const int	PLOT_BUFFER_SIZE;				//!< Size of the buffers used for visualization
+    // ** BUFFER SIZE ** //
+    static const int    PLOT_BUFFER_SIZE;               //!< Size of the buffers used for visualization
 
 
 private: /* members */
-	// ** Configurations ** //
-	QPitchSettings _settings;
-	std::shared_ptr<TuningParameters> 	_tuningParameters;
+    // ** Configurations ** //
+    QPitchSettings _settings;
+    std::shared_ptr<TuningParameters>   _tuningParameters;
 
     // ** Qt WIDGETS ** //
-	Ui::QPitch		_gt;							//!< Mainwindow created with Qt-Designer
-	QPitchCore*		_hQPitchCore;					//!< Handle to the working thread
+    Ui::QPitch      _gt;                            //!< Mainwindow created with Qt-Designer
+    QPitchCore*     _hQPitchCore;                   //!< Handle to the working thread
 
-	// ** STATUS BAR ITEMS ** //
-	QLabel				_sb_labelDeviceInfo;			//!< Label with the device information
+    // ** STATUS BAR ITEMS ** //
+    QLabel              _sb_labelDeviceInfo;            //!< Label with the device information
 
-	// ** MISC UI PROPERTIES ** //
-	bool				_compactModeActivated;			//!< Flag to request a widget resize to the compact mode
+    // ** MISC UI PROPERTIES ** //
+    bool                _compactModeActivated;          //!< Flag to request a widget resize to the compact mode
 
-	// ** PITCH ESTIMATION ** //
-	std::optional<EstimatedNote> _estimatedNote;
+    // ** PITCH ESTIMATION ** //
+    std::optional<EstimatedNote> _estimatedNote;
 
 private slots:
-	//! Open a dialog to configure the application settings.
-	void showPreferencesDialog( );
+    //! Open a dialog to configure the application settings.
+    void showPreferencesDialog( );
 
-	//! Open the about dialog.
-	void showAboutDialog( );
+    //! Open the about dialog.
+    void showAboutDialog( );
 
-	//! Update the application settings.
-	void setApplicationSettings();
+    //! Update the application settings.
+    void setApplicationSettings();
 
-	//! Set the compactmode for the application hiding the oscilloscope widget.
-	/*!
-	 * \param[in] enabled flag controlling the visualization of the oscilloscope widget
-	 */
-	void setViewCompactMode( bool enabled );
+    //! Set the compactmode for the application hiding the oscilloscope widget.
+    /*!
+     * \param[in] enabled flag controlling the visualization of the oscilloscope widget
+     */
+    void setViewCompactMode( bool enabled );
 
-	//! Update all the elements in the GUI.
-	void updateQPitchGui( );
+    //! Update all the elements in the GUI.
+    void updateQPitchGui( );
 
-	//! Handle updated VisualizationData
-	void onVisualizationDataUpdated(VisualizationData *visData);
+    //! Handle updated VisualizationData
+    void onVisualizationDataUpdated(VisualizationData *visData);
 
-	//! Called when the PortAudio stream is started.
-	void onPortAudioStreamStarted(QString device, QString hostApi);
+    //! Called when the PortAudio stream is started.
+    void onPortAudioStreamStarted(QString device, QString hostApi);
 };
 
 #endif /* __QPITCH_H_ */

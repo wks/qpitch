@@ -25,7 +25,7 @@
 
 QAboutDlg::QAboutDlg( QWidget* parent ) : QDialog( parent )
 {
-	// ** SETUP THE MAIN WINDOW ** //
-	_ab.setupUi( this );
+    // ** SETUP THE MAIN WINDOW ** //
+    _ab.setupUi( this );
 }
 

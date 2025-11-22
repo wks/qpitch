@@ -43,118 +43,118 @@
 #include <QPicture>
 
 class QOsziView : public QWidget {
-	Q_OBJECT
+    Q_OBJECT
 
 
 public: /* methods */
-	//! Deafult constructor.
-	/*!
-	 * \param[in] parent handle to the parent widget
-	 */
-	QOsziView( QWidget* parent = 0 );
+    //! Deafult constructor.
+    /*!
+     * \param[in] parent handle to the parent widget
+     */
+    QOsziView( QWidget* parent = 0 );
 
-	//! Default destructor.
-	~QOsziView( );
+    //! Default destructor.
+    ~QOsziView( );
 
-	//! Set the size of the buffer used for visualization.
-	/*!
-	 * \param[in] plotBuffer_size size of the buffer used for visualization
-	 */
-	void setBufferSize( const unsigned int plotBuffer_size );
+    //! Set the size of the buffer used for visualization.
+    /*!
+     * \param[in] plotBuffer_size size of the buffer used for visualization
+     */
+    void setBufferSize( const unsigned int plotBuffer_size );
 
 
 public slots:
-	//! Update the graph of the input signal displayed in the oscilloscope.
-	/*!
-	 * \param[in] plotSample the array with the new samples of the input signal to display
-	 * \param[in] timeRangeSample time range used to place the tick marks on the signal axis
-	 */
-	void setPlotSamples( const double* plotSample, double timeRangeSample );
+    //! Update the graph of the input signal displayed in the oscilloscope.
+    /*!
+     * \param[in] plotSample the array with the new samples of the input signal to display
+     * \param[in] timeRangeSample time range used to place the tick marks on the signal axis
+     */
+    void setPlotSamples( const double* plotSample, double timeRangeSample );
 
-	//! Update the graph of the autocorrelation displayed in the oscilloscope.
-	/*!
-	 * \param[in] plotAutoCorr the array with the new samples of the autocorrelation to display
-	 * \param[in] estimatedFrequency frequency of the input signal estimated as the first autocorrelation peak
-	 */
-	void setPlotAutoCorr( const double* plotAutoCorr, double estimatedFrequency );
+    //! Update the graph of the autocorrelation displayed in the oscilloscope.
+    /*!
+     * \param[in] plotAutoCorr the array with the new samples of the autocorrelation to display
+     * \param[in] estimatedFrequency frequency of the input signal estimated as the first autocorrelation peak
+     */
+    void setPlotAutoCorr( const double* plotAutoCorr, double estimatedFrequency );
 
 protected: /* methods */
-	//! Function called to handle a repaint request.
-	/*!
-	 * \param[in] event the details of the repaint event
-	 */
-	virtual void paintEvent( QPaintEvent* event );
+    //! Function called to handle a repaint request.
+    /*!
+     * \param[in] event the details of the repaint event
+     */
+    virtual void paintEvent( QPaintEvent* event );
 
-	//! Function called to handle a resize request.
-	/*!
-	 * \param[in] event the details of the resize event
-	 */
-	virtual void resizeEvent( QResizeEvent* event );
+    //! Function called to handle a resize request.
+    /*!
+     * \param[in] event the details of the resize event
+     */
+    virtual void resizeEvent( QResizeEvent* event );
 
 
 private: /* static constants */
-	static const double	SIDE_MARGIN;					//!< Percent width of the horizontal margin of the plot area
-	static const double	TOP_MARGIN;						//!< Percent height of the vertical margin of the plot area
-	static const double AXIS_HALF_HEIGHT;				//!< Percent height of half the plot area (used to simplify coding)
-	static const int	MINOR_TICK_HEIGHT;				//!< Pixel height of the minor ticks
-	static const int	MIDDLE_TICK_HEIGHT;				//!< Pixel height of the minor ticks
-	static const int	MAJOR_TICK_HEIGHT;				//!< Pixel height of the major ticks
-	static const int	LABEL_SPACING;					//!< Pixel distance of the labels from the axis
+    static const double SIDE_MARGIN;                    //!< Percent width of the horizontal margin of the plot area
+    static const double TOP_MARGIN;                     //!< Percent height of the vertical margin of the plot area
+    static const double AXIS_HALF_HEIGHT;               //!< Percent height of half the plot area (used to simplify coding)
+    static const int    MINOR_TICK_HEIGHT;              //!< Pixel height of the minor ticks
+    static const int    MIDDLE_TICK_HEIGHT;             //!< Pixel height of the minor ticks
+    static const int    MAJOR_TICK_HEIGHT;              //!< Pixel height of the major ticks
+    static const int    LABEL_SPACING;                  //!< Pixel distance of the labels from the axis
 
 
 private: /* members */
-	// ** VISUALIZATION BUFFERS ** //
-	std::vector<double> _plotSample;					//!< Buffer used to store time samples for visualization
-	std::vector<double> _plotAutoCorr;					//!< Buffer used to store autocorrelation samples for visualization
-	unsigned int		_plotBuffer_size;				//!< Size of the buffer used for visualization
+    // ** VISUALIZATION BUFFERS ** //
+    std::vector<double> _plotSample;                    //!< Buffer used to store time samples for visualization
+    std::vector<double> _plotAutoCorr;                  //!< Buffer used to store autocorrelation samples for visualization
+    unsigned int        _plotBuffer_size;               //!< Size of the buffer used for visualization
 
-	// ** REPAINT FLAG **//
-	bool				_drawBackground;				//!< Redraw everything when true, otherwise redraw only the note scale
-	QPicture			_picture;						//!< QPicture used to store the background to reduce the load
+    // ** REPAINT FLAG **//
+    bool                _drawBackground;                //!< Redraw everything when true, otherwise redraw only the note scale
+    QPicture            _picture;                       //!< QPicture used to store the background to reduce the load
 
-	// ** PLOT PARAMETERS ** //
-	double				_timeRangeSample;				//!< Time range of the signal axis
-	double				_estimatedFrequency;			//!< Value of the estimated frequency
+    // ** PLOT PARAMETERS ** //
+    double              _timeRangeSample;               //!< Time range of the signal axis
+    double              _estimatedFrequency;            //!< Value of the estimated frequency
 
 
 private: /* methods */
-	//! Draws an axis box with a linear scale with a fixed range [0, 50] ms.
-	/*!
-	 * \param[in] painter reference to the painter object used to draw on screen
-	 * \param[in] plotArea_width width of the plot area
-	 * \param[in] plotArea_height half the height of the plot area (used instead of the height to simplify coding)
-	 */
-	void drawLinearAxis( QPainter& painter, const int plotArea_width, const int plotArea_height );
+    //! Draws an axis box with a linear scale with a fixed range [0, 50] ms.
+    /*!
+     * \param[in] painter reference to the painter object used to draw on screen
+     * \param[in] plotArea_width width of the plot area
+     * \param[in] plotArea_height half the height of the plot area (used instead of the height to simplify coding)
+     */
+    void drawLinearAxis( QPainter& painter, const int plotArea_width, const int plotArea_height );
 
-	//! Draw an axis box with a reversed logarithmic scale with a fixed range [1000, 40] Hz.
-	/*!
-	 * \param[in] painter reference to the painter object used to draw on screen
-	 * \param[in] plotArea_width width of the plot area
-	 * \param[in] plotArea_height half the height of the plot area (used instead of the height to simplify coding)
-	 */
-	void drawReversedLogAxis( QPainter& painter, const int plotArea_width, const int plotArea_height );
+    //! Draw an axis box with a reversed logarithmic scale with a fixed range [1000, 40] Hz.
+    /*!
+     * \param[in] painter reference to the painter object used to draw on screen
+     * \param[in] plotArea_width width of the plot area
+     * \param[in] plotArea_height half the height of the plot area (used instead of the height to simplify coding)
+     */
+    void drawReversedLogAxis( QPainter& painter, const int plotArea_width, const int plotArea_height );
 
-	//! Draws an axis box with an optional x-axis.
-	/*!
-	 * \param[in] painter reference to the painter object used to draw on screen
-	 * \param[in] plotArea_width width of the plot area
-	 * \param[in] plotArea_height half the height of the plot area (used instead of the height to simplify coding)
-	 */
-	void drawAxisBox( QPainter& painter, const int plotArea_width, const int plotArea_height );
+    //! Draws an axis box with an optional x-axis.
+    /*!
+     * \param[in] painter reference to the painter object used to draw on screen
+     * \param[in] plotArea_width width of the plot area
+     * \param[in] plotArea_height half the height of the plot area (used instead of the height to simplify coding)
+     */
+    void drawAxisBox( QPainter& painter, const int plotArea_width, const int plotArea_height );
 
-	//! Draws an axis box with an optional x-axis and ticks in linear or logarithmic scale
-	/*!
-	 * \param[in] painter reference to the painter object used to draw on screen
-	 * \param[in] plotData buffer with the data to draw
-	 * \param[in] plotData_size size of the data buffer
-	 * \param[in] plotArea_width width of the plot area
-	 * \param[in] plotArea_height half the height of the plot area (used instead of the height to simplify coding)
-	 * \param[in] color the color used to draw the data
-	 * \param[in] autoScaleThreshold threshold under which autoscale is disabled (0 to always enable autoscale)
-	 */
-	void drawCurve( QPainter& painter, const double* plotData, const unsigned int plotData_size,
-		const int plotArea_width, const int plotArea_height, const QColor& color,
-		const double autoScaleThreshold );
+    //! Draws an axis box with an optional x-axis and ticks in linear or logarithmic scale
+    /*!
+     * \param[in] painter reference to the painter object used to draw on screen
+     * \param[in] plotData buffer with the data to draw
+     * \param[in] plotData_size size of the data buffer
+     * \param[in] plotArea_width width of the plot area
+     * \param[in] plotArea_height half the height of the plot area (used instead of the height to simplify coding)
+     * \param[in] color the color used to draw the data
+     * \param[in] autoScaleThreshold threshold under which autoscale is disabled (0 to always enable autoscale)
+     */
+    void drawCurve( QPainter& painter, const double* plotData, const unsigned int plotData_size,
+        const int plotArea_width, const int plotArea_height, const QColor& color,
+        const double autoScaleThreshold );
 };
 
 #endif /* __QOSZIVIEW_H_ */

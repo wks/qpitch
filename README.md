@@ -37,9 +37,9 @@ displayed using an oscilloscope-like plot.
 
 Requirements
 ============
- - Portaudio	<www.portaudio.com>
- - Qt toolkit			<www.trolltech.com>
- - FFTW3			<www.fftw.org>
+ - Portaudio    <www.portaudio.com>
+ - Qt toolkit           <www.trolltech.com>
+ - FFTW3            <www.fftw.org>
 
 As usual the latest the version, the best =)
 
