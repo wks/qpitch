@@ -54,7 +54,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # by FIND_PACKAGE)
 target_link_libraries( qpitch
     Qt::Widgets
-    ${PORTAUDIO_LIBRARIES}
+    PkgConfig::portaudio-2.0
     ${FFTW3_LIBRARIES}
 )
 
