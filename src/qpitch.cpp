@@ -89,7 +89,7 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
         this, &QPitch::onPortAudioStreamStarted);
 
     // ** START THE QPITCH CORE THREAD ** //
-    Q_ASSERT( _hQPitchCore != NULL );
+    Q_ASSERT( _hQPitchCore != nullptr );
     _hQPitchCore->start();
 
     // ** REMOVE MAXIMIZE BUTTON ** //
@@ -102,13 +102,13 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 QPitch::~QPitch( )
 {
     // ** ENSURE THAT THE DATA ARE VALID ** //
-    Q_ASSERT( _hQPitchCore  != NULL );
+    Q_ASSERT( _hQPitchCore  != nullptr );
 }
 
 void QPitch::closeEvent( QCloseEvent* /* event */ )
 {
     // ** ENSURE THAT THE DATA ARE VALID ** //
-    Q_ASSERT( _hQPitchCore  != NULL );
+    Q_ASSERT( _hQPitchCore  != nullptr );
 
     _settings.store();
 
@@ -134,7 +134,7 @@ bool QPitch::eventFilter( QObject* watched, QEvent* event )
 void QPitch::showPreferencesDialog( )
 {
     // ** ENSURE THAT THE DATA ARE VALID ** //
-    Q_ASSERT( _hQPitchCore  != NULL );
+    Q_ASSERT( _hQPitchCore  != nullptr );
 
     // ** SHOW PREFERENCES DIALOG ** //
     QSettingsDlg as( _settings, this );

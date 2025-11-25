@@ -111,7 +111,7 @@ void QPitchCore::startStream()
     Q_ASSERT( QThread::currentThread() == this );
 
     // The stream should not have been started.
-    Q_ASSERT( _stream == NULL );
+    Q_ASSERT( _stream == nullptr );
 
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
     // create the artificial square wave with some harmonics :: 110.0 Hz
@@ -171,7 +171,7 @@ void QPitchCore::startStream()
     inputParameters.channelCount                =   1;                                          // mono input
     inputParameters.sampleFormat                =   PA_SAMPLE_FORMAT;                           // the one we specified
     inputParameters.suggestedLatency            =   1.0 / 60.0;                                 // Try to get 60 fps.
-    inputParameters.hostApiSpecificStreamInfo   =   NULL;
+    inputParameters.hostApiSpecificStreamInfo   =   nullptr;
 
     // ** OPEN AN AUDIO INPUT STREAM ** //
 
@@ -191,7 +191,7 @@ void QPitchCore::startStream()
     PaError err = Pa_OpenStream(
         &_stream,
         &inputParameters,
-        NULL,                                   // no output
+        nullptr,                                   // no output
         _options.sampleFrequency,               // sample rate (default 44100 Hz)
         framesPerBuffer,                        // frames per buffer (not specified)
         paClipOff,                              // disable clipping
@@ -230,7 +230,7 @@ void QPitchCore::stopStream( )
     Q_ASSERT( QThread::currentThread() == this );
 
     // ** ENSURE THAT THE STREAM IS STARTED ** //
-    Q_ASSERT( _stream           != NULL );
+    Q_ASSERT( _stream           != nullptr );
 
     // ** STOP PORTAUDIO STREAM ** //
     PaError err = Pa_StopStream( _stream );
@@ -248,14 +248,14 @@ void QPitchCore::stopStream( )
     _pitchDetection.reset();
 
     // ** RELEASE RESOURCES ** //
-    _stream         = NULL;
+    _stream         = nullptr;
 }
 
 int QPitchCore::paCallback( const void* input, void* /*output*/, unsigned long frameCount,
         const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags, void* userData )
 {
-    Q_ASSERT( input     != NULL );
-    Q_ASSERT( userData  != NULL );
+    Q_ASSERT( input     != nullptr );
+    Q_ASSERT( userData  != nullptr );
 
     return( static_cast<QPitchCore*>( userData )->paStoreInputBufferCallback( (const SampleType*)input, frameCount,
         timeInfo, statusFlags ) );

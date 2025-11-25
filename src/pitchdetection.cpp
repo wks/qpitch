@@ -31,10 +31,10 @@ double* PitchDetectionContext::getInputBuffer() {
 double PitchDetectionContext::runPitchDetectionAlgorithm( )
 {
     // ** ENSURE THAT FFTW STRUCTURES ARE VALID ** //
-    Q_ASSERT( _fftw_plan_FFT    != NULL );
-    Q_ASSERT( _fftw_plan_IFFT   != NULL );
-    Q_ASSERT( _fftw_in_time     != NULL );
-    Q_ASSERT( _fftw_out_freq    != NULL );
+    Q_ASSERT( _fftw_plan_FFT    != nullptr );
+    Q_ASSERT( _fftw_plan_IFFT   != nullptr );
+    Q_ASSERT( _fftw_in_time     != nullptr );
+    Q_ASSERT( _fftw_out_freq    != nullptr );
 
     // ** COMPUTE THE AUTOCORRELATION ** //
     // compute the FFT of the input signal

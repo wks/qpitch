@@ -299,7 +299,7 @@ void QOsziView::drawCurve( QPainter& painter, const double* plotData, const unsi
     const double autoScaleThreshold )
 {
     // ** ENSURE THAT THE DATA ARE VALID ** //
-    Q_ASSERT( plotData != NULL );
+    Q_ASSERT( plotData != nullptr );
     Q_ASSERT( plotData_size != 0 );
 
     // enable antialiasing and plot signal samples

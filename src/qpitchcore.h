@@ -59,7 +59,7 @@ public: /* methods */
 
     //! Report exception.
     void report( ) {
-        QMessageBox::critical( NULL, "QPitch", QString( "PortAudio error: %1." ).arg( this->what( ) ) );
+        QMessageBox::critical( nullptr, "QPitch", QString( "PortAudio error: %1." ).arg( this->what( ) ) );
         std::cerr << "PortAudio error: " << this->what( ) << "\n";
     };
 };
