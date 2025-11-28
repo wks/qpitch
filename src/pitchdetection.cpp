@@ -28,6 +28,10 @@ double* PitchDetectionContext::getInputBuffer() {
     return _fftw_in_time;
 }
 
+fftw_complex* PitchDetectionContext::getOutputBuffer() {
+    return _fftw_out_freq;
+}
+
 double PitchDetectionContext::runPitchDetectionAlgorithm( )
 {
     // ** ENSURE THAT FFTW STRUCTURES ARE VALID ** //

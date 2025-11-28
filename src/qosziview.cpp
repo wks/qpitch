@@ -32,7 +32,7 @@
 // ** CUSTOM CONSTANTS ** //
 const double    QOsziView::SIDE_MARGIN          = 0.01;
 const double    QOsziView::TOP_MARGIN           = 0.055;
-const double    QOsziView::AXIS_HALF_HEIGHT     = 0.195;
+const double    QOsziView::AXIS_HALF_HEIGHT     = 0.100;
 const int       QOsziView::MINOR_TICK_HEIGHT    = 3;
 const int       QOsziView::MIDDLE_TICK_HEIGHT   = 5;
 const int       QOsziView::MAJOR_TICK_HEIGHT    = 7;
@@ -63,6 +63,8 @@ void QOsziView::setBufferSize( const unsigned int plotBuffer_size )
     _plotBuffer_size    = plotBuffer_size;
     _plotSample.clear();
     _plotSample.resize(plotBuffer_size);
+    _plotSpectrum.clear();
+    _plotSpectrum.resize(plotBuffer_size);
     _plotAutoCorr.clear();
     _plotAutoCorr.resize(plotBuffer_size);
     _estimatedFrequency = 0.0;
@@ -77,6 +79,15 @@ void QOsziView::setPlotSamples( const double* plotSample, double timeRangeSample
     // ** STORE SIGNAL ** //
     memcpy( _plotSample.data(), plotSample, _plotBuffer_size * sizeof( double ) );
     _timeRangeSample = timeRangeSample;
+}
+
+void QOsziView::setPlotSpectrum( const double* spectrum )
+{
+    // ** ENSURE THAT THE BUFFERS ARE VALID ** //
+    Q_ASSERT( _plotBuffer_size  != 0 );
+
+    // ** STORE SIGNAL ** //
+    memcpy( _plotSpectrum.data(), spectrum, _plotBuffer_size * sizeof( double ) );
 }
 
 
@@ -127,6 +138,16 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
             - plotArea_height - painter.fontMetrics( ).descent( ) - LABEL_SPACING,
             QString("Audio signal [ms]") );
 
+        // ** MIDDLE AXIS ** //
+        painter.translate( 0, 2 * (plotArea_topMargin + plotArea_height) );
+        drawLinearAxis( painter, plotArea_width, plotArea_height );
+
+        // draw title
+        painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
+        painter.drawText( plotArea_width / 2 - painter.fontMetrics( ).horizontalAdvance( QString("Audio signal [ms]") ) / 2 + 1,
+            - plotArea_height - painter.fontMetrics( ).descent( ) - LABEL_SPACING,
+            QString("Frequency spectrum [Hz]") );
+
         // ** LOWER AXIS ** //
         // move the painter (the horizontal translation is fine)
         painter.translate( 0, 2 * (plotArea_topMargin + plotArea_height) );
@@ -149,6 +170,10 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
     // ** UPPER AXIS ** //
     painter.translate( plotArea_sideMargin, plotArea_topMargin + plotArea_height );
     drawCurve( painter, _plotSample.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkGreen, 0.01 );
+
+    // ** MIDDLE AXIS ** //
+    painter.translate( 0, 2 * (plotArea_topMargin + plotArea_height) );
+    drawCurve( painter, _plotSpectrum.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkCyan, 0 );
 
     // ** LOWER AXIS ** //
     painter.translate( 0, 2 * (plotArea_topMargin + plotArea_height) );

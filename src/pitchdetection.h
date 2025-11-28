@@ -12,6 +12,7 @@ public: // ** PUBLIC METHODS ** //
     virtual ~PitchDetectionContext();
 
     double* getInputBuffer();
+    fftw_complex* getOutputBuffer();
 
     //! Estimate the pitch of the input signal finding the first peak of the autocorrelation.
     /*!

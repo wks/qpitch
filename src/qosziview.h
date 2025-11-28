@@ -71,6 +71,12 @@ public slots:
      */
     void setPlotSamples( const double* plotSample, double timeRangeSample );
 
+    //! Update the graph of the frequency spectrum displayed in the histogram
+    /*!
+     * \param[in] spectrum the array with the frequency spectrum to display
+     */
+    void setPlotSpectrum( const double* spectrum );
+
     //! Update the graph of the autocorrelation displayed in the oscilloscope.
     /*!
      * \param[in] plotAutoCorr the array with the new samples of the autocorrelation to display
@@ -105,6 +111,7 @@ private: /* static constants */
 private: /* members */
     // ** VISUALIZATION BUFFERS ** //
     std::vector<double> _plotSample;                    //!< Buffer used to store time samples for visualization
+    std::vector<double> _plotSpectrum;                  //!< Buffer used to store frequency spectrum used for visualization
     std::vector<double> _plotAutoCorr;                  //!< Buffer used to store autocorrelation samples for visualization
     unsigned int        _plotBuffer_size;               //!< Size of the buffer used for visualization
 

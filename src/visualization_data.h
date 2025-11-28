@@ -14,6 +14,7 @@ public:
     QMutex mutex;                               //!< Ensure the QPitchCore thread doesn't write to the buffers when the UI thread is drawing
     unsigned int        plotData_size;          //!< Total number of samples used for visualization
     std::vector<double> plotSample;             //!< Buffer used to store time samples used for visualization
+    std::vector<double> plotSpectrum;           //!< Buffer used to store frequency spectrum used for visualization
     std::vector<double> plotAutoCorr;           //!< Buffer used to store autocorrelation samples used for visualization
     double              timeRangeSample;
     double              estimatedFrequency;     //!< Estimated frequency

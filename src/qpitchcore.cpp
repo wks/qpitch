@@ -27,6 +27,7 @@
 #include <QtDebug>
 #include <QMutexLocker>
 #include <chrono>
+#include <cmath>
 
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
     #include <cmath>
@@ -474,6 +475,15 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker) {
 
         // compute the autocorrelation and find the best matching frequency
         _visualizationData.estimatedFrequency = _pitchDetection->runPitchDetectionAlgorithm( );
+
+        // Extract frequency spectrum.
+        fftw_complex *fftw_out_freq = _pitchDetection->getOutputBuffer();
+
+        for ( unsigned int k = 0 ; k < _visualizationData.plotData_size ; ++k ) {
+            Q_ASSERT( k < _options.fftFrameSize );
+            // At this moment, fftw_out_freq contains |X[f]|^2 which only contains real component.
+            _visualizationData.plotSpectrum[k] = fftw_out_freq[k][0];
+        }
 
         // extract autocorrelation samples for the oscilloscope view in the range [40, 1000] Hz --> [0, 25] msec
         unsigned int fftw_out_downsampleFactor;
