@@ -23,6 +23,7 @@
 #include "qosziview.h"
 
 #include "fpsprofiler.h"
+#include "texthelper.h"
 
 #include <cmath>
 
@@ -108,6 +109,10 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
     // ** INITIALIZE PAINTER ** //
     QPainter painter;
 
+    // setup the painter
+    painter.begin( this );
+    painter.setRenderHint(QPainter::Antialiasing);
+
     // ** COMPUTE DRAWING AREA SIZE ** //
     QRectF rc = rect();
     double width = rc.width();
@@ -115,29 +120,18 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
     double cellWidth = width;
     double cellHeight = height / 3.0;
 
-    QFontMetricsF fontMetrics(font(), this);
-
-    // Returns the vector from the text position to the bottom-mid point.
-    auto toBottomMiddle = [&](const QString &text) {
-        double hr = fontMetrics.horizontalAdvance(text);
-        double desc = fontMetrics.descent();
-        return QPointF(hr / 2.0, desc);
-    };
-
-    auto drawTextCentered = [&](const QPointF &point, const QString &text) {
-        painter.drawText(point - toBottomMiddle(text), text);
-    };
-
-    double fontHeight = fontMetrics.height();
+    QFont titleFont = painter.font();
+    QFontMetricsF titleFontMetrics(titleFont);
+    double titleFontHeight = titleFontMetrics.height();
 
     double plotArea_width      = cellWidth * (1.0 - 2.0 * SIDE_MARGIN);
     double plotArea_sideMargin = cellWidth * SIDE_MARGIN;
-    double plotArea_topMargin  = fontHeight;
+    double plotArea_topMargin  = titleFontHeight;
     double plotArea_height     = cellHeight / 2.0 - plotArea_topMargin;
 
-    // setup the painter
-    painter.begin( this );
-    painter.setRenderHint(QPainter::Antialiasing);
+    QPointF titleOffset(plotArea_width / 2.0, -plotArea_height - LABEL_SPACING);
+
+    TextHelper textHelper(painter);
 
     // ** UPPER AXIS ** //
     painter.resetTransform();
@@ -145,7 +139,7 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
     drawLinearAxis( painter, plotArea_width, plotArea_height );
 
     painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
-    drawTextCentered(QPointF(plotArea_width / 2.0, -plotArea_height - LABEL_SPACING), "Audio signal [ms]");
+    textHelper.drawTextCenteredUp(titleOffset, "Audio signal [ms]");
     drawCurve( painter, _plotSample.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkGreen, 0.01 );
 
     // ** MIDDLE AXIS ** //
@@ -154,7 +148,7 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
     drawLinearAxis( painter, plotArea_width, plotArea_height );
 
     painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
-    drawTextCentered(QPointF(plotArea_width / 2.0, -plotArea_height - LABEL_SPACING), "Frequency spectrum [Hz]");
+    textHelper.drawTextCenteredUp(titleOffset, "Frequency spectrum [Hz]");
     drawCurve( painter, _plotSpectrum.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkCyan, 0 );
 
     // ** LOWER AXIS ** //
@@ -164,7 +158,7 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
     drawReversedLogAxis( painter, plotArea_width, plotArea_height );
 
     painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
-    drawTextCentered(QPointF(plotArea_width / 2.0, -plotArea_height - LABEL_SPACING), "Autocorrelation [Hz]");
+    textHelper.drawTextCenteredUp(titleOffset, "Autocorrelation [Hz]");
     drawCurve( painter, _plotAutoCorr.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkBlue, 0 );
 
     // draw cursor
@@ -197,26 +191,16 @@ void QOsziView::drawLinearAxis( QPainter& painter, const double plotArea_width, 
 
     // plot labels
     painter.save( );
-    QFont font = painter.font( );
-    font.setPointSize( font.pointSize( ) - 2 );
-    painter.setFont( font );
-    QFontMetricsF fontMetrics(font, this);
+    QFont scaleFont = painter.font( );
+    scaleFont.setPointSize( scaleFont.pointSize( ) - 2 );
+    painter.setFont( scaleFont );
 
-    // Returns the vector from the text position to the top-mid point.
-    auto toTopMiddle = [&](const QString &text) {
-        double hr = fontMetrics.horizontalAdvance(text);
-        double asc = fontMetrics.ascent();
-        return QPointF(hr / 2.0, -asc);
-    };
-
-    auto drawTextCentered = [&](const QPointF &point, const QString &text) {
-        painter.drawText(point - toTopMiddle(text), text);
-    };
+    TextHelper textHelper(painter);
 
     painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
     for ( unsigned int k = 0 ; k <= 10 ; ++k ) {
-        drawTextCentered(QPointF(k * 0.1 * plotArea_width, plotArea_height + LABEL_SPACING),
-            QString("%1").arg( (unsigned int)(k * 0.1 * xAxisRange) ));
+        QPointF textPoint(k * 0.1 * plotArea_width, plotArea_height + LABEL_SPACING);
+        textHelper.drawTextCenteredDown(textPoint, QString("%1").arg( (unsigned int)(k * 0.1 * xAxisRange) ));
     }
     painter.restore( );
 }
@@ -234,21 +218,11 @@ void QOsziView::drawReversedLogAxis( QPainter& painter, const double plotArea_wi
     double  freq = 10.0;
 
     painter.save( );
-    QFont font = painter.font( );
-    font.setPointSize( font.pointSize( ) - 2 );
-    painter.setFont( font );
-    QFontMetricsF fontMetrics(font, this);
+    QFont scaleFont = painter.font( );
+    scaleFont.setPointSize( scaleFont.pointSize( ) - 2 );
+    painter.setFont( scaleFont );
 
-    // Returns the vector from the text position to the top-mid point.
-    auto toTopMiddle = [&](const QString &text) {
-        double hr = fontMetrics.horizontalAdvance(text);
-        double asc = fontMetrics.ascent();
-        return QPointF(hr / 2.0, -asc);
-    };
-
-    auto drawTextCentered = [&](const QPointF &point, const QString &text) {
-        painter.drawText(point - toTopMiddle(text), text);
-    };
+    TextHelper textHelper(painter);
 
     for ( unsigned int k = 5 ; k <= 20 ; ++k ) {
         if ( (k % 10) == 0 ) {
@@ -267,9 +241,9 @@ void QOsziView::drawReversedLogAxis( QPainter& painter, const double plotArea_wi
         QPointF textPoint(xTick, plotArea_height + LABEL_SPACING);
 
         if ( (k % 10) == 0 ) {
-            drawTextCentered(textPoint, QString("%1").arg( ( (unsigned int) freq ) ));
+            textHelper.drawTextCenteredDown(textPoint, QString("%1").arg( ( (unsigned int) freq ) ));
         } else if ( (k % 10) == 5 ) {
-            drawTextCentered(textPoint, QString("%1").arg( ( (unsigned int)((k % 10) * freq) ) ) );
+            textHelper.drawTextCenteredDown(textPoint, QString("%1").arg( ( (unsigned int)((k % 10) * freq) ) ));
         }
     }
 

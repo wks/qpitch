@@ -26,6 +26,7 @@ add_executable( qpitch
     cyclicbuffer.cpp
     qpitchsettings.cpp
     pitchdetection.cpp
+    texthelper.cpp
 
     qaboutdlg.h
     qlogview.h
@@ -40,6 +41,7 @@ add_executable( qpitch
     cyclicbuffer.h
     qpitchsettings.h
     pitchdetection.h
+    texthelper.h
 
     ui/qpitch.qrc
 

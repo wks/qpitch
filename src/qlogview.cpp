@@ -24,6 +24,7 @@
 #include "qlogview.h"
 
 #include "fpsprofiler.h"
+#include "texthelper.h"
 
 #include <cmath>
 
@@ -65,6 +66,10 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
     // ** INITIALIZE PAINTER ** //
     QPainter    painter;
 
+    // setup the painter
+    painter.begin(this);
+    painter.setRenderHint( QPainter::Antialiasing );
+
     // ** Prepare some common properties. ** //
 
     // Apply the side margin size.
@@ -73,10 +78,6 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
     QMarginsF margins(SIDE_MARGIN, 0.0, SIDE_MARGIN, 0.0);
     QRectF marginedRect = widgetRect.marginsRemoved(margins);
     double scaleWidth = marginedRect.width();
-
-    // setup the painter
-    painter.begin(this);
-    painter.setRenderHint( QPainter::Antialiasing );
 
     painter.translate(QPointF(marginedRect.left(), center.y()));
 
@@ -114,19 +115,7 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
     QFontMetricsF fontMetrics(labelFont, this);
     painter.setFont(labelFont);
 
-    // Returns the vector from the text position to the top-mid point.
-    auto toTopMiddle = [&](const QString &text) {
-        double hr = fontMetrics.horizontalAdvance(text);
-        double asc = fontMetrics.ascent();
-        return QPointF(hr / 2.0, -asc);
-    };
-
-    // Returns the vector from the text position to the bottom-mid point.
-    auto toBottomMiddle = [&](const QString &text) {
-        double hr = fontMetrics.horizontalAdvance(text);
-        double desc = fontMetrics.descent();
-        return QPointF(hr / 2.0, desc);
-    };
+    TextHelper textHelper(painter);
 
     // plot labels
     QPen penLabel(palette().windowText().color());
@@ -140,9 +129,9 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
         const QString &labelBelow = _tuningParameters->getNoteLabel(k, true);
         painter.setPen(_estimatedNote && k == _estimatedNote->currentPitch ? penActiveLabel : penLabel);
         // label above the bar
-        painter.drawText(QPointF(xTick, -BAR_HEIGHT - LABEL_OFFSET) - toBottomMiddle(labelAbove), labelAbove);
+        textHelper.drawTextCenteredUp(QPointF(xTick, -BAR_HEIGHT - LABEL_OFFSET), labelAbove);
         // label below the bar
-        painter.drawText(QPointF(xTick, BAR_HEIGHT + LABEL_OFFSET) - toTopMiddle(labelBelow), labelBelow);
+        textHelper.drawTextCenteredDown(QPointF(xTick, BAR_HEIGHT + LABEL_OFFSET), labelBelow);
     }
 
     // ** DRAW THE CURSOR IF REQUIRED ** //
