@@ -42,8 +42,6 @@ const int       QOsziView::LABEL_SPACING        = 3;
 QOsziView::QOsziView( QWidget* parent ) : QWidget( parent )
 {
     // ** SETUP PRIVATE VARIABLES ** //
-    // redraw everything the first time and disable signals
-    _drawBackground         = true;
     _timeRangeSample        = 1.0;                  // dummy values to avoid division by 0
 
     //** INITIALIZE BUFFERS ** //
@@ -110,73 +108,63 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
     // ** INITIALIZE PAINTER ** //
     QPainter painter;
 
-    // ** COMPUTE AXIS SIZE ** //
-    int plotArea_width      = (int)(width( ) * (1.0 - 2 * SIDE_MARGIN));
-    int plotArea_sideMargin = (int)(width( ) * SIDE_MARGIN);
-    int plotArea_height     = (int)(height( ) * AXIS_HALF_HEIGHT);
-    int plotArea_topMargin  = (int)(height( ) * TOP_MARGIN);
+    // ** COMPUTE DRAWING AREA SIZE ** //
+    QRectF rc = rect();
+    double width = rc.width();
+    double height = rc.height();
+    double cellWidth = width;
+    double cellHeight = height / 3.0;
 
-    // ** DRAW THE OFFSCREEN BUFFER ** //
-    if ( _drawBackground == true ) {
-        // do not redraw background next time
-        _drawBackground = false;
+    QFontMetricsF fontMetrics(font(), this);
 
-        // create a new pixmap with the right size
-        _picture = QPicture();
+    // Returns the vector from the text position to the bottom-mid point.
+    auto toBottomMiddle = [&](const QString &text) {
+        double hr = fontMetrics.horizontalAdvance(text);
+        double desc = fontMetrics.descent();
+        return QPointF(hr / 2.0, desc);
+    };
 
-        // setup the painter
-        painter.begin( &_picture );
-        painter.setRenderHint(QPainter::Antialiasing);
+    auto drawTextCentered = [&](const QPointF &point, const QString &text) {
+        painter.drawText(point - toBottomMiddle(text), text);
+    };
 
-        // ** UPPER AXIS ** //
-        painter.translate( plotArea_sideMargin, plotArea_topMargin + plotArea_height );
-        drawLinearAxis( painter, plotArea_width, plotArea_height );
+    double fontHeight = fontMetrics.height();
 
-        // draw title
-        painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
-        painter.drawText( plotArea_width / 2 - painter.fontMetrics( ).horizontalAdvance( QString("Audio signal [ms]") ) / 2 + 1,
-            - plotArea_height - painter.fontMetrics( ).descent( ) - LABEL_SPACING,
-            QString("Audio signal [ms]") );
+    double plotArea_width      = cellWidth * (1.0 - 2.0 * SIDE_MARGIN);
+    double plotArea_sideMargin = cellWidth * SIDE_MARGIN;
+    double plotArea_topMargin  = fontHeight;
+    double plotArea_height     = cellHeight / 2.0 - plotArea_topMargin;
 
-        // ** MIDDLE AXIS ** //
-        painter.translate( 0, 2 * (plotArea_topMargin + plotArea_height) );
-        drawLinearAxis( painter, plotArea_width, plotArea_height );
-
-        // draw title
-        painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
-        painter.drawText( plotArea_width / 2 - painter.fontMetrics( ).horizontalAdvance( QString("Audio signal [ms]") ) / 2 + 1,
-            - plotArea_height - painter.fontMetrics( ).descent( ) - LABEL_SPACING,
-            QString("Frequency spectrum [Hz]") );
-
-        // ** LOWER AXIS ** //
-        // move the painter (the horizontal translation is fine)
-        painter.translate( 0, 2 * (plotArea_topMargin + plotArea_height) );
-        drawReversedLogAxis( painter, plotArea_width, plotArea_height );
-
-        // draw title
-        painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
-        painter.drawText( plotArea_width / 2 - painter.fontMetrics( ).horizontalAdvance( QString("Autocorrelation [Hz]") ) / 2 + 1,
-            - plotArea_height - painter.fontMetrics( ).descent( ) - LABEL_SPACING,
-            QString("Autocorrelation [Hz]") );
-
-        painter.end( );
-    }
-
-    // ** DISPLAY THE OFFSCREEN BUFFER ** //
+    // setup the painter
     painter.begin( this );
     painter.setRenderHint(QPainter::Antialiasing);
-    painter.drawPicture( 0, 0, _picture );
 
     // ** UPPER AXIS ** //
-    painter.translate( plotArea_sideMargin, plotArea_topMargin + plotArea_height );
+    painter.resetTransform();
+    painter.translate( plotArea_sideMargin, cellHeight * 0 + plotArea_topMargin + plotArea_height );
+    drawLinearAxis( painter, plotArea_width, plotArea_height );
+
+    painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
+    drawTextCentered(QPointF(plotArea_width / 2.0, -plotArea_height - LABEL_SPACING), "Audio signal [ms]");
     drawCurve( painter, _plotSample.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkGreen, 0.01 );
 
     // ** MIDDLE AXIS ** //
-    painter.translate( 0, 2 * (plotArea_topMargin + plotArea_height) );
+    painter.resetTransform();
+    painter.translate( plotArea_sideMargin, cellHeight * 1 + plotArea_topMargin + plotArea_height );
+    drawLinearAxis( painter, plotArea_width, plotArea_height );
+
+    painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
+    drawTextCentered(QPointF(plotArea_width / 2.0, -plotArea_height - LABEL_SPACING), "Frequency spectrum [Hz]");
     drawCurve( painter, _plotSpectrum.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkCyan, 0 );
 
     // ** LOWER AXIS ** //
-    painter.translate( 0, 2 * (plotArea_topMargin + plotArea_height) );
+    // move the painter (the horizontal translation is fine)
+    painter.resetTransform();
+    painter.translate( plotArea_sideMargin, cellHeight * 2 + plotArea_topMargin + plotArea_height );
+    drawReversedLogAxis( painter, plotArea_width, plotArea_height );
+
+    painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
+    drawTextCentered(QPointF(plotArea_width / 2.0, -plotArea_height - LABEL_SPACING), "Autocorrelation [Hz]");
     drawCurve( painter, _plotAutoCorr.data(), _plotBuffer_size, plotArea_width, plotArea_height, Qt::darkBlue, 0 );
 
     // draw cursor
@@ -188,14 +176,7 @@ void QOsziView::paintEvent( QPaintEvent* /* event */ )
 }
 
 
-void QOsziView::resizeEvent( QResizeEvent* /* event */ )
-{
-    // ** REQUEST A BACKGROUND REPAINT ** //
-    _drawBackground = true;
-}
-
-
-void QOsziView::drawLinearAxis( QPainter& painter, const int plotArea_width, const int plotArea_height )
+void QOsziView::drawLinearAxis( QPainter& painter, const double plotArea_width, const double plotArea_height )
 {
     // axis range
     const double xAxisRange = 50.0;
@@ -204,20 +185,14 @@ void QOsziView::drawLinearAxis( QPainter& painter, const int plotArea_width, con
     drawAxisBox( painter, plotArea_width, plotArea_height );
 
     // plot ticks
-    painter.setPen( QPen( palette( ).dark( ), 0, Qt::SolidLine ) );
+    painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
 
     for ( unsigned int k = 1 ; k < 50 ; ++k ) {
-        int xTick = (int)(k * 0.02 * plotArea_width);
-        if ( (k % 10) == 0 ) {
-            // plot major ticks
-            painter.drawLine( xTick, plotArea_height, xTick, plotArea_height - MAJOR_TICK_HEIGHT );
-        } else if ( (k % 5) == 0 ) {
-            // plot middle ticks
-            painter.drawLine( xTick, plotArea_height, xTick, plotArea_height - MIDDLE_TICK_HEIGHT );
-        } else {
-            // plot minor ticks
-            painter.drawLine( xTick, plotArea_height, xTick, plotArea_height - MINOR_TICK_HEIGHT );
-        }
+        double xTick = k * 0.02 * plotArea_width;
+        double tickHeight = k % 10 == 0 ? MAJOR_TICK_HEIGHT
+                          : k % 5  == 0 ? MIDDLE_TICK_HEIGHT
+                          : MINOR_TICK_HEIGHT;
+        painter.drawLine( QPointF(xTick, plotArea_height), QPointF(xTick, plotArea_height - tickHeight) );
     }
 
     // plot labels
@@ -225,82 +200,80 @@ void QOsziView::drawLinearAxis( QPainter& painter, const int plotArea_width, con
     QFont font = painter.font( );
     font.setPointSize( font.pointSize( ) - 2 );
     painter.setFont( font );
+    QFontMetricsF fontMetrics(font, this);
+
+    // Returns the vector from the text position to the top-mid point.
+    auto toTopMiddle = [&](const QString &text) {
+        double hr = fontMetrics.horizontalAdvance(text);
+        double asc = fontMetrics.ascent();
+        return QPointF(hr / 2.0, -asc);
+    };
+
+    auto drawTextCentered = [&](const QPointF &point, const QString &text) {
+        painter.drawText(point - toTopMiddle(text), text);
+    };
+
     painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
     for ( unsigned int k = 0 ; k <= 10 ; ++k ) {
-        painter.drawText( (unsigned int)(k * 0.1 * plotArea_width) - painter.fontMetrics( ).horizontalAdvance( QString("%1").arg( (unsigned int)(k * 0.1 * xAxisRange) ) ) / 2 + 1,
-            plotArea_height + painter.fontMetrics( ).ascent( ) + LABEL_SPACING,
-            QString("%1").arg( (unsigned int)(k * 0.1 * xAxisRange) ) );
+        drawTextCentered(QPointF(k * 0.1 * plotArea_width, plotArea_height + LABEL_SPACING),
+            QString("%1").arg( (unsigned int)(k * 0.1 * xAxisRange) ));
     }
     painter.restore( );
 }
 
 
-void QOsziView::drawReversedLogAxis( QPainter& painter, const int plotArea_width, const int plotArea_height )
+void QOsziView::drawReversedLogAxis( QPainter& painter, const double plotArea_width, const double plotArea_height )
 {
     // plot axis
     drawAxisBox( painter, plotArea_width, plotArea_height );
 
     // plot ticks
-    painter.setPen( QPen( palette( ).dark( ), 0, Qt::SolidLine ) );
+    painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
 
-    int     xTick;
+    double  xTick;
     double  freq = 10.0;
+
+    painter.save( );
+    QFont font = painter.font( );
+    font.setPointSize( font.pointSize( ) - 2 );
+    painter.setFont( font );
+    QFontMetricsF fontMetrics(font, this);
+
+    // Returns the vector from the text position to the top-mid point.
+    auto toTopMiddle = [&](const QString &text) {
+        double hr = fontMetrics.horizontalAdvance(text);
+        double asc = fontMetrics.ascent();
+        return QPointF(hr / 2.0, -asc);
+    };
+
+    auto drawTextCentered = [&](const QPointF &point, const QString &text) {
+        painter.drawText(point - toTopMiddle(text), text);
+    };
 
     for ( unsigned int k = 5 ; k <= 20 ; ++k ) {
         if ( (k % 10) == 0 ) {
             // move to next decade
             freq *= 10;
-            xTick = (int)( 40.0 * (double) plotArea_width / freq );
+            xTick = 40.0 * plotArea_width / freq;
         } else {
-            xTick = (int)( 40.0 * (double) plotArea_width / ((k % 10) * freq) );
+            xTick = 40.0 * plotArea_width / ((k % 10) * freq);
         }
 
-        if ( (k % 10) == 0 ) {
-            // plot major ticks
-            painter.drawLine( xTick, plotArea_height, xTick, plotArea_height - MAJOR_TICK_HEIGHT );
+        double tickHeight = k % 10 == 0 ? MAJOR_TICK_HEIGHT
+                          : k % 5  == 0 ? MIDDLE_TICK_HEIGHT
+                          : MINOR_TICK_HEIGHT;
+        painter.drawLine( QPointF(xTick, plotArea_height), QPointF(xTick, plotArea_height - tickHeight) );
 
-            painter.save( );
-            painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
-            QFont font = painter.font( );
-            font.setPointSize( font.pointSize( ) - 2 );
-            painter.setFont( font );
-            painter.drawText( xTick - painter.fontMetrics( ).horizontalAdvance( QString("%1").arg( (unsigned int) freq ) ) / 2 + 1,
-                plotArea_height + painter.fontMetrics( ).ascent( ) + LABEL_SPACING,
-                QString("%1").arg( ( (unsigned int) freq ) ) );
-            painter.restore( );
+        QPointF textPoint(xTick, plotArea_height + LABEL_SPACING);
+
+        if ( (k % 10) == 0 ) {
+            drawTextCentered(textPoint, QString("%1").arg( ( (unsigned int) freq ) ));
         } else if ( (k % 10) == 5 ) {
-            // plot middle ticks
-            painter.drawLine( xTick, plotArea_height, xTick, plotArea_height - MIDDLE_TICK_HEIGHT );
-
-            painter.save( );
-            painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
-            QFont font = painter.font( );
-            font.setPointSize( font.pointSize( ) - 2 );
-            painter.setFont( font );
-            painter.drawText( xTick - painter.fontMetrics( ).horizontalAdvance( QString("%1").arg( (unsigned int)((k % 10) * freq) ) ) / 2 + 1,
-                plotArea_height + painter.fontMetrics( ).ascent( ) + LABEL_SPACING,
-                QString("%1").arg( ( (unsigned int)((k % 10) * freq) ) ) );
-            painter.restore( );
-        } else {
-            // plot minor ticks
-            painter.drawLine( xTick, plotArea_height, xTick, plotArea_height - MINOR_TICK_HEIGHT );
+            drawTextCentered(textPoint, QString("%1").arg( ( (unsigned int)((k % 10) * freq) ) ) );
         }
     }
 
-    // plot labels
-    painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
-    freq = 10.0;
-    for ( unsigned int k = 4 ; k <= 20 ; k+=5 ) {
-        if ( (k % 10) == 0 ) {
-            // move to next decade
-            freq *= 10;
-            xTick = (int)( 40.0 * (double) plotArea_width / freq );
-        } else {
-            xTick = (int)( 40.0 * (double) plotArea_width / ((k % 10) * freq) );
-        }
-
-
-    }
+    painter.restore();
 }
 
 

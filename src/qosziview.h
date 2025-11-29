@@ -91,13 +91,6 @@ protected: /* methods */
      */
     virtual void paintEvent( QPaintEvent* event );
 
-    //! Function called to handle a resize request.
-    /*!
-     * \param[in] event the details of the resize event
-     */
-    virtual void resizeEvent( QResizeEvent* event );
-
-
 private: /* static constants */
     static const double SIDE_MARGIN;                    //!< Percent width of the horizontal margin of the plot area
     static const double TOP_MARGIN;                     //!< Percent height of the vertical margin of the plot area
@@ -115,10 +108,6 @@ private: /* members */
     std::vector<double> _plotAutoCorr;                  //!< Buffer used to store autocorrelation samples for visualization
     unsigned int        _plotBuffer_size;               //!< Size of the buffer used for visualization
 
-    // ** REPAINT FLAG **//
-    bool                _drawBackground;                //!< Redraw everything when true, otherwise redraw only the note scale
-    QPicture            _picture;                       //!< QPicture used to store the background to reduce the load
-
     // ** PLOT PARAMETERS ** //
     double              _timeRangeSample;               //!< Time range of the signal axis
     double              _estimatedFrequency;            //!< Value of the estimated frequency
@@ -131,7 +120,7 @@ private: /* methods */
      * \param[in] plotArea_width width of the plot area
      * \param[in] plotArea_height half the height of the plot area (used instead of the height to simplify coding)
      */
-    void drawLinearAxis( QPainter& painter, const int plotArea_width, const int plotArea_height );
+    void drawLinearAxis( QPainter& painter, const double plotArea_width, const double plotArea_height );
 
     //! Draw an axis box with a reversed logarithmic scale with a fixed range [1000, 40] Hz.
     /*!
@@ -139,7 +128,7 @@ private: /* methods */
      * \param[in] plotArea_width width of the plot area
      * \param[in] plotArea_height half the height of the plot area (used instead of the height to simplify coding)
      */
-    void drawReversedLogAxis( QPainter& painter, const int plotArea_width, const int plotArea_height );
+    void drawReversedLogAxis( QPainter& painter, const double plotArea_width, const double plotArea_height );
 
     //! Draws an axis box with an optional x-axis.
     /*!
