@@ -44,10 +44,6 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 
     _settings.load();
 
-    // ** REJECT MOUSE EVENT FOR QLINEEDIT ** //
-    _gt.lineEdit_note->installEventFilter( this );
-    _gt.lineEdit_frequency->installEventFilter( this );
-
     // ** INITIALIZE TUNING PARAMETERS ** //
     _tuningParameters = std::make_shared<TuningParameters>(_settings.fundamentalFrequency, _settings.tuningNotation);
 
@@ -115,20 +111,6 @@ void QPitch::closeEvent( QCloseEvent* /* event */ )
     // TODO: Ensure the QPitchCore doesn't see the QPitchCore instance destructed.
     _hQPitchCore->requestStop();
 }
-
-
-bool QPitch::eventFilter( QObject* watched, QEvent* event )
-{
-    if ( ( (watched == _gt.lineEdit_note) || (watched == _gt.lineEdit_frequency) ) &&
-        ( (event->type( ) >= QEvent::MouseButtonPress) && (event->type( ) <= QEvent::MouseMove) ) ) {
-        // ignore event
-        return true;
-    } else {
-        // standard event processing
-        return QObject::eventFilter( watched, event );
-    }
-}
-
 
 
 void QPitch::showPreferencesDialog( )

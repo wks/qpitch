@@ -62,14 +62,6 @@ protected: /* methods */
      */
     virtual void closeEvent( QCloseEvent* event );
 
-    //! Function called to handle generic events.
-    /*!
-     * \param[in] watched the object that has emitted the event
-     * \param[in] event details of the event to be processed
-     */
-    virtual bool eventFilter( QObject* watched, QEvent* event );
-
-
 private: /* static constants */
     // ** BUFFER SIZE ** //
     static const int    PLOT_BUFFER_SIZE;               //!< Size of the buffers used for visualization
