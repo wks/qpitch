@@ -27,6 +27,7 @@ add_executable( qpitch
     qpitchsettings.cpp
     pitchdetection.cpp
     texthelper.cpp
+    plotview.cpp
 
     qaboutdlg.h
     qlogview.h
@@ -42,6 +43,7 @@ add_executable( qpitch
     qpitchsettings.h
     pitchdetection.h
     texthelper.h
+    plotview.h
 
     ui/qpitch.qrc
 

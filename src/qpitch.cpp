@@ -61,6 +61,10 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
     }
 
     // ** INITIALIZE CUSTOM WIDGETS ** //
+    _gt.widget_testPlotView->setTitle("Samples [ms] (experimental)");
+    _gt.widget_testPlotView->setScaleKind(PlotView::ScaleKind::Linear);
+    _gt.widget_testPlotView->setScaleRange(200.0);
+
     _gt.widget_qlogview->setTuningParameters(_tuningParameters);
     _gt.widget_qosziview->setBufferSize( PLOT_BUFFER_SIZE );
 
@@ -175,6 +179,7 @@ void QPitch::updateQPitchGui( )
     fp.tick();
 
     // ** UPDATE WIDGETS ** //
+    _gt.widget_testPlotView->update();
     _gt.widget_qosziview->update( );
     _gt.widget_qlogview->update( );
     _gt.widget_freqDiff->update();
@@ -203,6 +208,7 @@ void QPitch::updateQPitchGui( )
 void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
     {
         QMutexLocker visDataLocker(&visData->mutex);
+        _gt.widget_testPlotView->setData(visData->plotSample);
         _gt.widget_qosziview->setPlotSamples(visData->plotSample.data(), visData->timeRangeSample);
         _gt.widget_qosziview->setPlotSpectrum(visData->plotSpectrum.data());
         _gt.widget_qosziview->setPlotAutoCorr(visData->plotAutoCorr.data(), visData->estimatedFrequency);
