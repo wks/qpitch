@@ -438,40 +438,11 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker) {
         fftw_in_time[k] = _tmp_sample_buffer[k];
     }
 
-    // downsample factor used to extract a buffer with a time range of 50 milliseconds
-    unsigned int fftw_in_downsampleFactor;
-    if ( _options.sampleFrequency == 44100.0 ) {
-        fftw_in_downsampleFactor = 4;
-    } else if ( _options.sampleFrequency == 22050.0 ) {
-        fftw_in_downsampleFactor = 2;
-    }
-
     {
         QMutexLocker visDataLocker(&_visualizationData.mutex);
 
         // Copy some samples to _visualizationData.
-        {
-            double lastSample = fftw_in_time[0];
-            bool risingEdgeDetected = false;
-            size_t plotSampleCursor = 0;
-            for ( unsigned int k = 1; k < frames_copied; ++k ) {
-                // Find the first rising edge that crosses the zero point.
-                double currentSample = fftw_in_time[k];
-                if (lastSample < 0.0 && currentSample >= 0.0) {
-                    risingEdgeDetected = true;
-                }
-                if (risingEdgeDetected) {
-                    // TODO: See why the qosziview assumes the -32768 to 32767 range.
-                    _visualizationData.plotSample[plotSampleCursor] = currentSample;
-                    plotSampleCursor++;
-                    if (plotSampleCursor >= _visualizationData.plotData_size) {
-                        break;
-                    }
-                }
-            }
-        }
-
-        _visualizationData.timeRangeSample = _options.fftFrameSize / _options.sampleFrequency;
+        _visualizationData.popluateSamples(fftw_in_time, frames_copied, _options.sampleFrequency);
 
         // compute the autocorrelation and find the best matching frequency
         _visualizationData.estimatedFrequency = _pitchDetection->runPitchDetectionAlgorithm( );

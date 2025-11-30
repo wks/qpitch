@@ -102,33 +102,71 @@ void PlotView::drawAxisBox(QPainter& painter, const QRectF &rc) {
 }
 
 void PlotView::drawLinearAxis(QPainter& painter, const QRectF &rc) {
-    // axis range
-    const double xAxisRange = 50.0;
-
-    // plot ticks
-    painter.setPen(QPen(palette().text(), 1.0, Qt::SolidLine ) );
-
-    for (size_t k = 1 ; k < 50 ; ++k) {
-        double xTick = rc.left() + k * 0.02 * rc.width();
-        double tickHeight = k % 10 == 0 ? MAJOR_TICK_HEIGHT
-                          : k % 5  == 0 ? MIDDLE_TICK_HEIGHT
-                          : MINOR_TICK_HEIGHT;
-        painter.drawLine(QPointF(xTick, rc.bottom()), QPointF(xTick, rc.bottom() - tickHeight));
-    }
-
-    // plot labels
-    painter.save( );
-    QFont scaleFont = painter.font( );
-    scaleFont.setPointSize( scaleFont.pointSize( ) - 2 );
-    painter.setFont( scaleFont );
+    painter.save();
+    QFont scaleFont = painter.font();
+    scaleFont.setPointSize(scaleFont.pointSize() - 2);
+    painter.setFont(scaleFont);
 
     TextHelper textHelper(painter);
 
-    painter.setPen( QPen( palette( ).text( ), 0, Qt::SolidLine ) );
-    for ( unsigned int k = 0 ; k <= 10 ; ++k ) {
-        QPointF textPoint(rc.left() + k * 0.1 * rc.width(), rc.bottom() + LABEL_SPACING);
-        textHelper.drawTextCenteredDown(textPoint, QString("%1").arg( (unsigned int)(k * 0.1 * xAxisRange) ));
+    QPen penTick(palette().dark(), 1.0, Qt::SolidLine);
+    QPen penLabel(palette().text().color());
+
+    auto drawTickAndLabel = [&](double xTick, int level, int maxLevel, double value) {
+        double tickHeight = level == 0 ? MAJOR_TICK_HEIGHT
+                          : level == 1 ? MIDDLE_TICK_HEIGHT
+                          : MINOR_TICK_HEIGHT;
+        painter.setPen(penTick);
+        painter.drawLine(QPointF(xTick, rc.bottom()), QPointF(xTick, rc.bottom() - tickHeight));
+
+        if (level <= maxLevel) {
+            QPointF textPoint(xTick, rc.bottom() + LABEL_SPACING);
+            painter.setPen(penLabel);
+            textHelper.drawTextCenteredDown(textPoint, QString("%1").arg(value));
+        }
+    };
+
+    // axis range
+    const double xAxisRange = _scaleRange;
+
+    if (0 < xAxisRange && xAxisRange < INFINITY) {
+        // xAxisRange = b * 10^p for some b where 1 <= b < 10
+        double p = std::floor(std::log10(xAxisRange));
+        double b1 = pow(10.0, p);
+
+        // Check if 1 <= b < 2
+        bool between1And2 = xAxisRange < b1 * 2;
+
+        double majorUnit;
+        double maxLevel;
+        if (!between1And2) {
+            // We usually keep one significant figure for the distance between major ticks.
+            // So if xAxisRange = 63, then major ticks will be at 0, 10, 20, 30, 40, 50 and 60.
+            majorUnit = b1;
+            maxLevel = 1;
+        } else {
+            // But if b == 1, we only make the major ticks one order of magnitude finer.
+            // So if xAxisRange = 13, we place major ticks at 0, 1, 2, 3, 4, ..., 9, 10, 11, 12, 13.
+            // In this way, we may have at most 20 major ticks, from 0 to 19.
+            majorUnit = b1 / 10.0;
+            maxLevel = 0;
+        }
+
+        for (int mi = 0; mi < 200; mi++) {
+            double value = majorUnit * mi / 10.0;
+
+            if (value > xAxisRange) {
+                break;
+            }
+
+            int level = mi % 10 == 0 ? 0
+                      : mi % 5 == 0 ? 1
+                      : 2;
+            double xTick = rc.left() + rc.width() * value / xAxisRange;
+            drawTickAndLabel(xTick, level, maxLevel, value);
+        }
     }
+
     painter.restore( );
 }
 
