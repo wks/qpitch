@@ -448,7 +448,7 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker) {
         _visualizationData.estimatedFrequency = _pitchDetection->runPitchDetectionAlgorithm( );
 
         // Extract frequency spectrum.
-        fftw_complex *fftw_out_freq = _pitchDetection->getOutputBuffer();
+        fftw_complex *fftw_out_freq = _pitchDetection->getFreq2Buffer();
 
         for ( unsigned int k = 0 ; k < _visualizationData.plotData_size ; ++k ) {
             Q_ASSERT( k < _options.fftFrameSize );
@@ -464,9 +464,10 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker) {
             fftw_out_downsampleFactor = 1 * PitchDetectionContext::ZERO_PADDING_FACTOR;
         }
 
+        double *fftw_out_time_autocorr = _pitchDetection->getAutoCorrBuffer();
         for ( unsigned int k = 0 ; k < _visualizationData.plotData_size ; ++k ) {
             Q_ASSERT( (k * fftw_out_downsampleFactor) < (PitchDetectionContext::ZERO_PADDING_FACTOR * _options.fftFrameSize) );
-            _visualizationData.plotAutoCorr[k] = fftw_in_time[k * fftw_out_downsampleFactor];
+            _visualizationData.plotAutoCorr[k] = fftw_out_time_autocorr[k * fftw_out_downsampleFactor];
         }
 
         _visualizationData.estimatedNote = _options.tuningParameters.estimateNote(_visualizationData.estimatedFrequency);

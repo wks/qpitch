@@ -12,7 +12,8 @@ public: // ** PUBLIC METHODS ** //
     virtual ~PitchDetectionContext();
 
     double* getInputBuffer();
-    fftw_complex* getOutputBuffer();
+    fftw_complex* getFreq2Buffer();
+    double* getAutoCorrBuffer();
 
     //! Estimate the pitch of the input signal finding the first peak of the autocorrelation.
     /*!
@@ -27,7 +28,9 @@ private:
     // ** FFTW STRUCTURES ** //
     fftw_plan           _fftw_plan_FFT;                         //!< Plan to compute the FFT of a given signal
     fftw_plan           _fftw_plan_IFFT;                        //!< Plan to compute the IFFT of a given signal (with additional zero-padding
-    double*             _fftw_in_time;                          //!< External buffer used to store signals in the time domain (first the input signal and then its autocorrelation)
-    unsigned int        _fftw_in_time_size;                     //!< Size of the external buffer
-    fftw_complex*       _fftw_out_freq;                         //!< Buffer used to store signals in the frequency domain (first the FFT of the input signal and later the FFT of its autocorrelation
+    size_t              _fftFrameSize;                          //!< Number of frames in the time-domain input
+    double*             _fftw_in_time;                          //!< External buffer used to store the input signal in the time domain
+    fftw_complex*       _fftw_mid_freq;                         //!< Buffer used to store the intermediate signal in the frequency domain
+    fftw_complex*       _fftw_mid_freq2;                        //!< Buffer used to store the intermediate signal in the frequency domain for auto-correlation
+    double*             _fftw_out_time_autocorr;                //!< Buffer used to store the output signal in the time domain for the auto-correlation
 };
