@@ -209,8 +209,8 @@ void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
     {
         QMutexLocker visDataLocker(&visData->mutex);
         _gt.widget_testPlotView->setData(visData->plotSample);
-        _gt.widget_testPlotView->setScaleRange(visData->timeRangeSample);
-        _gt.widget_qosziview->setPlotSamples(visData->plotSample.data(), visData->timeRangeSample);
+        _gt.widget_testPlotView->setScaleRange(visData->plotSampleRange);
+        _gt.widget_qosziview->setPlotSamples(visData->plotSample.data(), visData->plotSampleRange);
         _gt.widget_qosziview->setPlotSpectrum(visData->plotSpectrum.data());
         _gt.widget_qosziview->setPlotAutoCorr(visData->plotAutoCorr.data(), visData->estimatedFrequency);
         _gt.widget_qlogview->setEstimatedNote(visData->estimatedNote);

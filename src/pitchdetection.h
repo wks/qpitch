@@ -11,6 +11,11 @@ public: // ** PUBLIC METHODS ** //
     PitchDetectionContext(uint32_t sampleFrequency, size_t fftFrameSize);
     virtual ~PitchDetectionContext();
 
+    size_t getFFTFrameSize() const;
+    size_t getOutFrameSize() const;
+
+    void loadSamples(float *inputSamples, size_t inputSize);
+
     double* getInputBuffer();
     fftw_complex* getFreq2Buffer();
     double* getAutoCorrBuffer();

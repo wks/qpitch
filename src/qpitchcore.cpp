@@ -432,44 +432,24 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker) {
     }
 
     // Transfer the samples to _pitchDetection, converting sample format (float -> double) at the same time.
-    double *fftw_in_time = _pitchDetection->getInputBuffer();
-    memset(fftw_in_time, 0, _options.fftFrameSize * sizeof(double));
-    for (size_t k = 0; k < frames_copied; k++) {
-        fftw_in_time[k] = _tmp_sample_buffer[k];
-    }
+    _pitchDetection->loadSamples(_tmp_sample_buffer.data(), frames_copied);
 
+    // Do pitch detection.
+    double estimatedFrequency = _pitchDetection->runPitchDetectionAlgorithm();
+    std::optional<EstimatedNote> estimatedNote = _options.tuningParameters.estimateNote(estimatedFrequency);
+
+    // Populate visualization data.
     {
         QMutexLocker visDataLocker(&_visualizationData.mutex);
 
-        // Copy some samples to _visualizationData.
-        _visualizationData.popluateSamples(fftw_in_time, frames_copied, _options.sampleFrequency);
+        _visualizationData.popluateSamples(_tmp_sample_buffer.data(), frames_copied, _options.sampleFrequency);
+        _visualizationData.popluateSpectrum(_pitchDetection->getFreq2Buffer(), _pitchDetection->getFFTFrameSize(), _options.sampleFrequency);
+        _visualizationData.popluateAutoCorr(_pitchDetection->getAutoCorrBuffer(),
+            _pitchDetection->getOutFrameSize(),
+            _options.sampleFrequency,
+            PitchDetectionContext::ZERO_PADDING_FACTOR);
 
-        // compute the autocorrelation and find the best matching frequency
-        _visualizationData.estimatedFrequency = _pitchDetection->runPitchDetectionAlgorithm( );
-
-        // Extract frequency spectrum.
-        fftw_complex *fftw_out_freq = _pitchDetection->getFreq2Buffer();
-
-        for ( unsigned int k = 0 ; k < _visualizationData.plotData_size ; ++k ) {
-            Q_ASSERT( k < _options.fftFrameSize );
-            // At this moment, fftw_out_freq contains |X[f]|^2 which only contains real component.
-            _visualizationData.plotSpectrum[k] = fftw_out_freq[k][0];
-        }
-
-        // extract autocorrelation samples for the oscilloscope view in the range [40, 1000] Hz --> [0, 25] msec
-        unsigned int fftw_out_downsampleFactor;
-        if ( _options.sampleFrequency == 44100.0 ) {
-            fftw_out_downsampleFactor = 2 * PitchDetectionContext::ZERO_PADDING_FACTOR;
-        } else if ( _options.sampleFrequency == 22050.0 ) {
-            fftw_out_downsampleFactor = 1 * PitchDetectionContext::ZERO_PADDING_FACTOR;
-        }
-
-        double *fftw_out_time_autocorr = _pitchDetection->getAutoCorrBuffer();
-        for ( unsigned int k = 0 ; k < _visualizationData.plotData_size ; ++k ) {
-            Q_ASSERT( (k * fftw_out_downsampleFactor) < (PitchDetectionContext::ZERO_PADDING_FACTOR * _options.fftFrameSize) );
-            _visualizationData.plotAutoCorr[k] = fftw_out_time_autocorr[k * fftw_out_downsampleFactor];
-        }
-
+        _visualizationData.estimatedFrequency = estimatedFrequency;
         _visualizationData.estimatedNote = _options.tuningParameters.estimateNote(_visualizationData.estimatedFrequency);
     }
 

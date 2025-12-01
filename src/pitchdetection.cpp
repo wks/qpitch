@@ -2,6 +2,7 @@
 
 #include <QtAssert>
 #include <cstring>
+#include <algorithm>
 
 const int PitchDetectionContext::ZERO_PADDING_FACTOR = 80;
 
@@ -28,6 +29,25 @@ PitchDetectionContext::~PitchDetectionContext() {
     fftw_free(_fftw_mid_freq);
     fftw_free(_fftw_mid_freq2);
     fftw_free(_fftw_out_time_autocorr);
+}
+
+size_t PitchDetectionContext::getFFTFrameSize() const {
+    return _fftFrameSize;
+}
+
+size_t PitchDetectionContext::getOutFrameSize() const {
+    return _fftFrameSize * ZERO_PADDING_FACTOR;
+}
+
+void PitchDetectionContext::loadSamples(float *samples, size_t inputSize) {
+    size_t numCopy = std::min(inputSize, _fftFrameSize);
+    for (size_t i = 0; i < numCopy; i++) {
+        // TODO: Apply window function.
+        _fftw_in_time[i] = samples[i];
+    }
+    if (inputSize < _fftFrameSize) {
+        std::fill(&_fftw_in_time[inputSize], &_fftw_in_time[_fftFrameSize], 0);
+    }
 }
 
 double* PitchDetectionContext::getInputBuffer() {
