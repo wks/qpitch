@@ -14,7 +14,6 @@ public:
     enum class ScaleKind {
         Linear,
         Logarithmic,
-        ReverseLogarithmic,
     };
 
     explicit PlotView(QWidget *parent = nullptr);
