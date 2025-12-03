@@ -17,7 +17,6 @@ public:
     };
 
     explicit PlotView(QWidget *parent = nullptr);
-    PlotView(QWidget *parent, QString title, ScaleKind scaleKind, double scaleRange);
 
     void setTitle(const QString &title);
     void setScaleKind(ScaleKind scaleKind);

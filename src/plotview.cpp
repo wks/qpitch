@@ -23,16 +23,6 @@ PlotView::PlotView(QWidget *parent): QWidget(parent) {
     _marker = std::nullopt;
 }
 
-PlotView::PlotView(QWidget *parent, QString title, ScaleKind scaleKind,
-                     double scaleRange):
-    _title(title),
-    _scaleKind(scaleKind),
-    _scaleRange(scaleRange)
-{
-    _data.clear();
-    _marker = std::nullopt;
-}
-
 void PlotView::setTitle(const QString &title) {
     _title = title;
 }
