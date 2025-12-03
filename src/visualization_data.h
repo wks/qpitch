@@ -26,6 +26,6 @@ public:
     double              plotSpectrumRange;      //!< The frequency range of the plotSpectrum array, in Hz
     std::vector<double> plotAutoCorr;           //!< Buffer used to store autocorrelation samples used for visualization
     double              plotAutoCorrRange;      //!< The time range of the plotAutoCorr array, in milliseconds
-    double              estimatedFrequency;     //!< Estimated frequency
+    double              estimatedFrequency;     //!< Estimated frequency, in Hz
     std::optional<EstimatedNote> estimatedNote;          //!< Estimated note
 };

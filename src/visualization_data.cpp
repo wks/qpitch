@@ -62,7 +62,7 @@ void VisualizationData::popluateSpectrum(fftw_complex *freqDomain, size_t srcSiz
         std::fill_n(&plotSpectrum[copyLen], plotData_size - copyLen, 0.0);
     }
 
-    plotSpectrumRange = (double)sampleFrequency * plotData_size / (2.0 * srcSize);
+    plotSpectrumRange = (double)sampleFrequency * plotData_size / srcSize;
 }
 
 void VisualizationData::popluateAutoCorr(double *timeDomain, size_t srcSize, uint32_t sampleFrequency, size_t multiplier) {

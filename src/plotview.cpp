@@ -81,11 +81,11 @@ void PlotView::paintEvent(QPaintEvent* event) {
     // ** DRAW CURVE ** //
     drawCurve(painter, plotAreaRc, Qt::darkGreen, 0.01);
 
-    // draw cursor
+    // ** DRAW MARKER ** //
     if (_marker.has_value()) {
         double markerValue = _marker.value();
-        painter.setPen( QPen( Qt::red, 0, Qt::SolidLine ) );
-        double markerX = 40.0 / markerValue * plotAreaRc.width();
+        painter.setPen(QPen(Qt::red, 0, Qt::SolidLine));
+        double markerX = plotAreaRc.left() + (markerValue / _scaleRange) * plotAreaRc.width();
         painter.drawLine(QPointF(markerX, plotAreaRc.top()), QPointF(markerX, plotAreaRc.bottom()));
     }
 }
