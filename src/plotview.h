@@ -47,5 +47,6 @@ private:
     QPen _linePen;
     QPen _markerPen;
     std::vector<double> _data;
+    std::vector<QPointF> _dataPoints;
     std::optional<double> _marker;
 };

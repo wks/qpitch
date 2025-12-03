@@ -19,7 +19,7 @@ PlotView::PlotView(QWidget *parent): QWidget(parent) {
     _linePen = QPen(Qt::GlobalColor::darkGreen, 1.0);
     _markerPen = QPen(Qt::GlobalColor::red, 1.0);
 
-    _data.clear();
+    _dataPoints.clear();
     _marker = std::nullopt;
 }
 
@@ -45,6 +45,7 @@ void PlotView::setMarkerPen(const QPen &pen) {
 
 void PlotView::setData(const std::vector<double> &newData) {
     _data = newData;
+    _dataPoints.resize(newData.size());
 }
 
 void PlotView::setMarker(std::optional<double> marker) {
@@ -199,10 +200,13 @@ void PlotView::drawCurve(QPainter& painter, const QRectF &rc, const double autoS
     // y-axis is upside-down so use a negative scale factor to mirror the plot
     double scaleFactor  = -(0.95 * rc.height() / 2) / std::max(limitValue, autoScaleThreshold);
 
-    double xIntervalStep = rc.width() / _data.size();
-    QPointF origin(rc.left(), rc.center().y());
-    for (size_t k = 1 ; k < _data.size() ; ++k) {
-        painter.drawLine(origin + QPointF((k - 1) * xIntervalStep, _data[k - 1] * scaleFactor),
-            origin + QPointF(k * xIntervalStep, _data[k] * scaleFactor));
+    double xLeft = rc.left();
+    double xRight = rc.right();
+    double yMiddle = rc.center().y();
+    for (size_t k = 0; k < _dataPoints.size(); k++) {
+        _dataPoints[k].setX(std::lerp(xLeft, xRight, (double)k / _dataPoints.size()));
+        _dataPoints[k].setY(yMiddle + _data[k] * scaleFactor);
     }
+
+    painter.drawPolyline(_dataPoints.data(), _dataPoints.size());
 }
