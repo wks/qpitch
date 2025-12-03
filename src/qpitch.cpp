@@ -61,22 +61,31 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
     }
 
     // ** INITIALIZE CUSTOM WIDGETS ** //
-    _gt.widget_plotSamples->setTitle("Samples [ms] (experimental)");
+
+    // The input signal acquired from the microphone or from the line-in input is plotted in the
+    // upper axis. The range of the x-axis is determined by the buffer size of the visualization
+    // data, and may vary with the sampling frequency.
+    _gt.widget_plotSamples->setTitle("Samples [ms]");
     _gt.widget_plotSamples->setScaleKind(PlotView::ScaleKind::Linear);
     _gt.widget_plotSamples->setLinePen(QPen(Qt::GlobalColor::darkGreen, 1.0));
 
-    _gt.widget_plotSpectrum->setTitle("Frequency Spectrum [Hz] (experimental)");
+    // The middle axis shows the energy density spectrum of the input signal in the frequency
+    // domain.  It is also the Fourier transform of the autocorrelation.
+    _gt.widget_plotSpectrum->setTitle("Frequency Spectrum [Hz]");
     _gt.widget_plotSpectrum->setScaleKind(PlotView::ScaleKind::Linear);
     _gt.widget_plotSpectrum->setLinePen(QPen(Qt::GlobalColor::darkCyan, 1.0));
     _gt.widget_plotSpectrum->setMarkerPen(QPen(Qt::GlobalColor::darkYellow, 1.0, Qt::PenStyle::DotLine));
 
-    _gt.widget_plotAutoCorr->setTitle("Auto-correlation [ms] (experimental)");
+    // The autocorrelation of the input signal is plotted in the lower axis. The x-axis has the same
+    // scale as the input signal in the time domain. The peak of the autocorrelation used to detect
+    // the frequency of the input signal is indicated by a red line, and its x-coordinate is the
+    // period of the input signal, or the reciprocal of the estimated frequency.
+    _gt.widget_plotAutoCorr->setTitle("Autocorrelation [ms]");
     _gt.widget_plotAutoCorr->setScaleKind(PlotView::ScaleKind::Linear);
     _gt.widget_plotAutoCorr->setLinePen(QPen(Qt::GlobalColor::darkBlue, 1.0));
     _gt.widget_plotAutoCorr->setMarkerPen(QPen(Qt::GlobalColor::red, 1.0));
 
     _gt.widget_qlogview->setTuningParameters(_tuningParameters);
-    _gt.widget_qosziview->setBufferSize( PLOT_BUFFER_SIZE );
 
     // ** SETUP THE CONNECTIONS ** //
     // File menu
@@ -172,12 +181,8 @@ void QPitch::setViewCompactMode( bool enabled )
 {
     // ** MANAGE COMPACT MODE ** //
     if ( enabled == true ) {
-        setMinimumSize(800, 600 - _gt.widget_qosziview->height( ) - 6 );
-        setMaximumSize(800, 600 - _gt.widget_qosziview->height( ) - 6 );
-        _gt.widget_qosziview->setVisible( false );
         _compactModeActivated = true;
     } else {
-        _gt.widget_qosziview->setVisible( true );
         setMinimumSize(800, 600);
         setMaximumSize(800, 600);
     }
@@ -192,7 +197,6 @@ void QPitch::updateQPitchGui( )
     _gt.widget_plotSamples->update();
     _gt.widget_plotSpectrum->update();
     _gt.widget_plotAutoCorr->update();
-    _gt.widget_qosziview->update( );
     _gt.widget_qlogview->update( );
     _gt.widget_freqDiff->update();
 
@@ -231,9 +235,6 @@ void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
         double estimatedPeriod = 1000.0 / visData->estimatedFrequency; // Period of the detected frequency, in milliseconds.
         _gt.widget_plotAutoCorr->setMarker(estimatedPeriod);
 
-        _gt.widget_qosziview->setPlotSamples(visData->plotSample.data(), visData->plotSampleRange);
-        _gt.widget_qosziview->setPlotSpectrum(visData->plotSpectrum.data());
-        _gt.widget_qosziview->setPlotAutoCorr(visData->plotAutoCorr.data(), visData->estimatedFrequency);
         _gt.widget_qlogview->setEstimatedNote(visData->estimatedNote);
         _estimatedNote = visData->estimatedNote;
         _gt.widget_freqDiff->setEstimatedNote(visData->estimatedNote);

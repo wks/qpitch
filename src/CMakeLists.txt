@@ -15,7 +15,6 @@ add_executable( qpitch
     main.cpp
     qaboutdlg.cpp
     qlogview.cpp
-    qosziview.cpp
     qpitch.cpp
     qpitchcore.cpp
     qsettingsdlg.cpp
@@ -31,7 +30,6 @@ add_executable( qpitch
 
     qaboutdlg.h
     qlogview.h
-    qosziview.h
     qpitchcore.h
     qpitch.h
     qsettingsdlg.h

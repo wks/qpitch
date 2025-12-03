@@ -7,6 +7,10 @@
 
 #include <optional>
 
+/*!
+ * This class implements an oscilloscope-like widget for the visualization of signals in the time
+ * domain or the frequency domain.
+ */
 class PlotView : public QWidget {
     Q_OBJECT
 

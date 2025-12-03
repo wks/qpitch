@@ -186,19 +186,6 @@
       </property>
      </widget>
     </item>
-    <item>
-     <widget class="QOsziView" name="widget_qosziview" native="true">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="autoFillBackground">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -276,12 +263,6 @@
   </action>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>QOsziView</class>
-   <extends>QWidget</extends>
-   <header>qosziview.h</header>
-   <container>1</container>
-  </customwidget>
   <customwidget>
    <class>QLogView</class>
    <extends>QWidget</extends>
