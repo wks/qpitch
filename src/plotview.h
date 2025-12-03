@@ -3,6 +3,7 @@
 #include <QString>
 #include <QWidget>
 #include <QPaintEvent>
+#include <QPen>
 
 #include <optional>
 
@@ -22,6 +23,8 @@ public:
     void setTitle(const QString &title);
     void setScaleKind(ScaleKind scaleKind);
     void setScaleRange(double scaleRange);
+    void setLinePen(const QPen &pen);
+    void setMarkerPen(const QPen &pen);
     void setData(const std::vector<double> &newData);
     void setMarker(std::optional<double> marker);
 
@@ -38,11 +41,13 @@ private:
 
     void drawAxisBox(QPainter& painter, const QRectF &rc);
     void drawLinearAxis(QPainter& painter, const QRectF &rc);
-    void drawCurve(QPainter& painter, const QRectF &rc, const QColor& color, const double autoScaleThreshold);
+    void drawCurve(QPainter& painter, const QRectF &rc, const double autoScaleThreshold);
 
     QString _title;
     ScaleKind _scaleKind;
     double _scaleRange;
+    QPen _linePen;
+    QPen _markerPen;
     std::vector<double> _data;
     std::optional<double> _marker;
 };

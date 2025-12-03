@@ -11,7 +11,17 @@ const double PlotView::MINOR_TICK_HEIGHT   = 3;
 const double PlotView::MIDDLE_TICK_HEIGHT  = 5;
 const double PlotView::MAJOR_TICK_HEIGHT   = 7;
 
-PlotView::PlotView(QWidget *parent): PlotView(parent, "No title", ScaleKind::Linear, 1000.0) {}
+PlotView::PlotView(QWidget *parent): QWidget(parent) {
+    _title = "No title";
+    _scaleKind = ScaleKind::Linear;
+    _scaleRange = 0.0;
+
+    _linePen = QPen(Qt::GlobalColor::darkGreen, 1.0);
+    _markerPen = QPen(Qt::GlobalColor::red, 1.0);
+
+    _data.clear();
+    _marker = std::nullopt;
+}
 
 PlotView::PlotView(QWidget *parent, QString title, ScaleKind scaleKind,
                      double scaleRange):
@@ -33,6 +43,14 @@ void PlotView::setScaleKind(ScaleKind scaleKind) {
 
 void PlotView::setScaleRange(double scaleRange) {
     _scaleRange = scaleRange;
+}
+
+void PlotView::setLinePen(const QPen &pen) {
+    _linePen = pen;
+}
+
+void PlotView::setMarkerPen(const QPen &pen) {
+    _markerPen = pen;
 }
 
 void PlotView::setData(const std::vector<double> &newData) {
@@ -79,12 +97,12 @@ void PlotView::paintEvent(QPaintEvent* event) {
     textHelper.drawTextCenteredUp(QPointF(plotAreaRc.center().x(), plotAreaRc.top() - LABEL_SPACING), _title);
 
     // ** DRAW CURVE ** //
-    drawCurve(painter, plotAreaRc, Qt::darkGreen, 0.01);
+    drawCurve(painter, plotAreaRc, 0.01);
 
     // ** DRAW MARKER ** //
     if (_marker.has_value()) {
         double markerValue = _marker.value();
-        painter.setPen(QPen(Qt::red, 0, Qt::SolidLine));
+        painter.setPen(_markerPen);
         double markerX = plotAreaRc.left() + (markerValue / _scaleRange) * plotAreaRc.width();
         painter.drawLine(QPointF(markerX, plotAreaRc.top()), QPointF(markerX, plotAreaRc.bottom()));
     }
@@ -171,11 +189,10 @@ void PlotView::drawLinearAxis(QPainter& painter, const QRectF &rc) {
 }
 
 
-void PlotView::drawCurve(QPainter& painter, const QRectF &rc, const QColor& color,
-    const double autoScaleThreshold)
+void PlotView::drawCurve(QPainter& painter, const QRectF &rc, const double autoScaleThreshold)
 {
     // enable antialiasing and plot signal samples
-    painter.setPen( QPen( color, 0, Qt::SolidLine ) );
+    painter.setPen(_linePen);
 
     if (_data.empty()) {
         painter.drawLine(rc.topLeft(), rc.bottomRight());

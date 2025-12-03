@@ -63,12 +63,17 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
     // ** INITIALIZE CUSTOM WIDGETS ** //
     _gt.widget_plotSamples->setTitle("Samples [ms] (experimental)");
     _gt.widget_plotSamples->setScaleKind(PlotView::ScaleKind::Linear);
+    _gt.widget_plotSamples->setLinePen(QPen(Qt::GlobalColor::darkGreen, 1.0));
 
     _gt.widget_plotSpectrum->setTitle("Frequency Spectrum [Hz] (experimental)");
     _gt.widget_plotSpectrum->setScaleKind(PlotView::ScaleKind::Linear);
+    _gt.widget_plotSpectrum->setLinePen(QPen(Qt::GlobalColor::darkCyan, 1.0));
+    _gt.widget_plotSpectrum->setMarkerPen(QPen(Qt::GlobalColor::darkYellow, 1.0, Qt::PenStyle::DotLine));
 
     _gt.widget_plotAutoCorr->setTitle("Auto-correlation [ms] (experimental)");
     _gt.widget_plotAutoCorr->setScaleKind(PlotView::ScaleKind::Linear);
+    _gt.widget_plotAutoCorr->setLinePen(QPen(Qt::GlobalColor::darkBlue, 1.0));
+    _gt.widget_plotAutoCorr->setMarkerPen(QPen(Qt::GlobalColor::red, 1.0));
 
     _gt.widget_qlogview->setTuningParameters(_tuningParameters);
     _gt.widget_qosziview->setBufferSize( PLOT_BUFFER_SIZE );
@@ -220,6 +225,7 @@ void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
         _gt.widget_plotSamples->setScaleRange(visData->plotSampleRange);
         _gt.widget_plotSpectrum->setData(visData->plotSpectrum);
         _gt.widget_plotSpectrum->setScaleRange(visData->plotSpectrumRange);
+        _gt.widget_plotSpectrum->setMarker(visData->estimatedFrequency);
         _gt.widget_plotAutoCorr->setData(visData->plotAutoCorr);
         _gt.widget_plotAutoCorr->setScaleRange(visData->plotAutoCorrRange);
         double estimatedPeriod = 1000.0 / visData->estimatedFrequency; // Period of the detected frequency, in milliseconds.
