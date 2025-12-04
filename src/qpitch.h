@@ -79,9 +79,6 @@ private: /* members */
     // ** STATUS BAR ITEMS ** //
     QLabel              _sb_labelDeviceInfo;            //!< Label with the device information
 
-    // ** MISC UI PROPERTIES ** //
-    bool                _compactModeActivated;          //!< Flag to request a widget resize to the compact mode
-
     // ** PITCH ESTIMATION ** //
     std::optional<EstimatedNote> _estimatedNote;
 
@@ -94,12 +91,6 @@ private slots:
 
     //! Update the application settings.
     void setApplicationSettings();
-
-    //! Set the compactmode for the application hiding the oscilloscope widget.
-    /*!
-     * \param[in] enabled flag controlling the visualization of the oscilloscope widget
-     */
-    void setViewCompactMode( bool enabled );
 
     //! Update all the elements in the GUI.
     void updateQPitchGui( );

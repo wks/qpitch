@@ -210,8 +210,6 @@
     </property>
     <addaction name="action_preferences"/>
     <addaction name="separator"/>
-    <addaction name="action_compactView"/>
-    <addaction name="separator"/>
     <addaction name="action_quit"/>
    </widget>
    <addaction name="menu_File"/>

@@ -91,8 +91,6 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
     // File menu
     connect( _gt.action_preferences, &QAction::triggered,
         this, &QPitch::showPreferencesDialog);
-    connect( _gt.action_compactView, &QAction::triggered,
-        this, &QPitch::setViewCompactMode);
 
     // Help menu
     connect( _gt.action_about, &QAction::triggered,
@@ -177,17 +175,6 @@ void QPitch::showAboutDialog( )
 }
 
 
-void QPitch::setViewCompactMode( bool enabled )
-{
-    // ** MANAGE COMPACT MODE ** //
-    if ( enabled == true ) {
-        _compactModeActivated = true;
-    } else {
-        setMinimumSize(800, 600);
-        setMaximumSize(800, 600);
-    }
-}
-
 void QPitch::updateQPitchGui( )
 {
     static FPSProfiler fp("updateQPitchGui");
@@ -214,11 +201,6 @@ void QPitch::updateQPitchGui( )
     }
 
     _gt.lineEdit_fps->setText(QString("%1").arg(fp.get_fps()));
-
-    if ( _compactModeActivated == true ) {
-        resize( minimumSize( ) );
-        _compactModeActivated = false;
-    }
 }
 
 void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
