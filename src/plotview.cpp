@@ -94,7 +94,7 @@ void PlotView::paintEvent(QPaintEvent* event) {
     if (_marker.has_value()) {
         double markerValue = _marker.value();
         painter.setPen(_markerPen);
-        double markerX = plotAreaRc.left() + (markerValue / _scaleRange) * plotAreaRc.width();
+        double markerX = std::lerp(plotAreaRc.left(), plotAreaRc.right(), markerValue / _scaleRange);
         painter.drawLine(QPointF(markerX, plotAreaRc.top()), QPointF(markerX, plotAreaRc.bottom()));
     }
 }
@@ -171,7 +171,7 @@ void PlotView::drawLinearAxis(QPainter& painter, const QRectF &rc) {
             int level = mi % 10 == 0 ? 0
                       : mi % 5 == 0 ? 1
                       : 2;
-            double xTick = rc.left() + rc.width() * value / xAxisRange;
+            double xTick = std::lerp(rc.left(), rc.right(), value / xAxisRange);
             drawTickAndLabel(xTick, level, maxLevel, value);
         }
     }
