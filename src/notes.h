@@ -33,8 +33,8 @@ public:
     std::optional<EstimatedNote> estimateNote(double estimatedFrequency) const;
 
 public:
-    static const double D_NOTE;                         //!< Ratio of two consecutive notes for pitch detection
-    static const double D_NOTE_LOG;                     //!< Ratio of two consecutive notes for visualization
+    static const double D_NOTE;                         //!< Ratio of two consecutive notes
+    static const double D_NOTE_LOG;                     //!< Base-2 logarithm of the ratio of two consecutive notes
 
 private:
     double              _fundamentalFrequency;          //!< Fundamental frequency used as a reference to build the pitch scale

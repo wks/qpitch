@@ -13,8 +13,8 @@ const QString NoteLabel[6][12] = {
 };
 
 // ** NOTE RATIOS ** //
-const double    TuningParameters::D_NOTE                = pow( 2.0, 1.0/12.0 );
-const double    TuningParameters::D_NOTE_LOG            = log10( pow( 2.0, 1.0/12.0 ) ) / log10( 2.0 );
+const double    TuningParameters::D_NOTE                = pow( 2.0, 1.0 / 12.0 );
+const double    TuningParameters::D_NOTE_LOG            = 1.0 / 12.0;
 
 TuningParameters::TuningParameters(double fundamentalFrequency, TuningNotation tuningNotation) {
     setParameters(fundamentalFrequency, tuningNotation);
@@ -27,7 +27,7 @@ void TuningParameters::setParameters(double fundamentalFrequency, TuningNotation
     // ** UPDATE PITCH DETECTION CONSTANTS ** //
     for ( unsigned int k = 0 ; k < 12 ; ++k ) {
         _noteFrequency[k]   = _fundamentalFrequency * pow( D_NOTE, (int) k );                       // set frequencies for pitch detection
-        _noteScale[k]       = log10( _fundamentalFrequency ) / log10( 2.0 ) + (k * D_NOTE_LOG);     // set frequencies for visualization
+        _noteScale[k]       = log2( _fundamentalFrequency ) + (k * D_NOTE_LOG);     // set frequencies for visualization
     }
 }
 
@@ -75,7 +75,7 @@ std::optional<EstimatedNote> TuningParameters::estimateNote(const double estimat
 
     double          minPitchDeviation       = _fundamentalFrequency * D_NOTE_LOG / 2.0;
     unsigned int    minPitchDeviation_index = 0;
-    double          log_octaveNormalizedFreq    = log10(octaveNormalizedFrequency) / log10( 2.0 );
+    double          log_octaveNormalizedFreq    = log2(octaveNormalizedFrequency);
 
     for ( unsigned int k = 0 ; k < 12 ; ++k ) {
         if ( fabs( log_octaveNormalizedFreq - _noteScale[k] ) < minPitchDeviation ) {
