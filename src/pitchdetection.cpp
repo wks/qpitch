@@ -3,6 +3,7 @@
 #include <QtAssert>
 #include <cstring>
 #include <algorithm>
+#include <cmath>
 
 const int PitchDetectionContext::ZERO_PADDING_FACTOR = 80;
 
@@ -12,6 +13,7 @@ PitchDetectionContext::PitchDetectionContext(uint32_t sampleFrequency, size_t ff
     size_t outFrameSize = fftFrameSize * ZERO_PADDING_FACTOR;
 
     // ** INITIALIZE FFT STRUCTURES ** //
+    _window                 = (double*)       fftw_malloc(sizeof(double)       * fftFrameSize);
     _fftw_in_time           = (double*)       fftw_malloc(sizeof(double)       * fftFrameSize);
     _fftw_mid_freq          = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fftFrameSize);
     _fftw_mid_freq2         = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * outFrameSize);
@@ -19,12 +21,15 @@ PitchDetectionContext::PitchDetectionContext(uint32_t sampleFrequency, size_t ff
 
     _fftw_plan_FFT  = fftw_plan_dft_r2c_1d( fftFrameSize, _fftw_in_time, _fftw_mid_freq, FFTW_ESTIMATE );               // FFT
     _fftw_plan_IFFT = fftw_plan_dft_c2r_1d( outFrameSize, _fftw_mid_freq2, _fftw_out_time_autocorr, FFTW_ESTIMATE );    // IFFT zero-padded
+
+    generateHanningWindow(_window, fftFrameSize);
 }
 
 PitchDetectionContext::~PitchDetectionContext() {
     // ** DESTROY FFTW STRUCTURES ** //
     fftw_destroy_plan( _fftw_plan_FFT );
     fftw_destroy_plan( _fftw_plan_IFFT );
+    fftw_free(_window);
     fftw_free(_fftw_in_time);
     fftw_free(_fftw_mid_freq);
     fftw_free(_fftw_mid_freq2);
@@ -42,8 +47,7 @@ size_t PitchDetectionContext::getOutFrameSize() const {
 void PitchDetectionContext::loadSamples(float *samples, size_t inputSize) {
     size_t numCopy = std::min(inputSize, _fftFrameSize);
     for (size_t i = 0; i < numCopy; i++) {
-        // TODO: Apply window function.
-        _fftw_in_time[i] = samples[i];
+        _fftw_in_time[i] = samples[i] * _window[i];
     }
     if (inputSize < _fftFrameSize) {
         std::fill(&_fftw_in_time[inputSize], &_fftw_in_time[_fftFrameSize], 0);
@@ -129,3 +133,18 @@ double PitchDetectionContext::runPitchDetectionAlgorithm( )
     return ( (ZERO_PADDING_FACTOR / 2) * (2.0 * _sampleFrequency) / (double) maxAutoCorrelation_index );
 }
 
+void PitchDetectionContext::generateHanningWindow(double *buffer, size_t size) {
+    if (size <= 1) {
+        // Pathological case.  Just make it a rect window.
+        for (size_t i = 0; i < size; i++) {
+            buffer[i] = 1.0;
+        }
+        return;
+    }
+
+    for (size_t i = 0; i < size; i++) {
+        double x = std::lerp(0, 2 * M_PI, (double)i / (size - 1));
+        double y = 0.5 - 0.5 * cos(x);
+        buffer[i] = y;
+    }
+}

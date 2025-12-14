@@ -26,6 +26,9 @@ public: // ** PUBLIC METHODS ** //
      */
     double runPitchDetectionAlgorithm();
 
+    //! Generate a Hanning window.
+    static void generateHanningWindow(double *buffer, size_t size);
+
 private:
     // ** PITCH DETECTION PARAMETERS ** //
     double              _sampleFrequency;                       //!< PortAudio stream
@@ -34,6 +37,7 @@ private:
     fftw_plan           _fftw_plan_FFT;                         //!< Plan to compute the FFT of a given signal
     fftw_plan           _fftw_plan_IFFT;                        //!< Plan to compute the IFFT of a given signal (with additional zero-padding
     size_t              _fftFrameSize;                          //!< Number of frames in the time-domain input
+    double*             _window;                                //!< The window to apply to the input signal
     double*             _fftw_in_time;                          //!< External buffer used to store the input signal in the time domain
     fftw_complex*       _fftw_mid_freq;                         //!< Buffer used to store the intermediate signal in the frequency domain
     fftw_complex*       _fftw_mid_freq2;                        //!< Buffer used to store the intermediate signal in the frequency domain for auto-correlation
