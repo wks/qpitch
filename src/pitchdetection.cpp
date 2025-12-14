@@ -143,7 +143,7 @@ void PitchDetectionContext::generateHanningWindow(double *buffer, size_t size) {
     }
 
     for (size_t i = 0; i < size; i++) {
-        double x = std::lerp(0, 2 * M_PI, (double)i / (size - 1));
+        double x = 2.0 * M_PI * i / (size - 1);
         double y = 0.5 - 0.5 * cos(x);
         buffer[i] = y;
     }
