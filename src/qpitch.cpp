@@ -194,7 +194,7 @@ void QPitch::updateQPitchGui()
         _gt.lineEdit_cents->clear();
     }
 
-    _gt.lineEdit_fps->setText(QString("%1").arg(fp.get_fps()));
+    _gt.lineEdit_fps->setText(QString("%1").arg(fp.getFPS()));
 }
 
 void QPitch::onVisualizationDataUpdated(VisualizationData *visData)

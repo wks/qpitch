@@ -37,14 +37,14 @@ class QPitchCorePrivate
 {
 };
 
-QPitchCore::QPitchCore(QObject *parent, const unsigned int plotPlot_size, QPitchCoreOptions options)
+QPitchCore::QPitchCore(QObject *parent, const unsigned int plotPlotSize, QPitchCoreOptions options)
     : QThread(parent),
       _bufferUpdated(false),
       _stopRequested(false),
       _options(options),
       _stream(nullptr),
       _buffer(0),
-      _visualizationData(plotPlot_size),
+      _visualizationData(plotPlotSize),
       _callbackProfilingEnabled(false),
       _callbackProfilingStarted(false),
       _lastCallbackTime(0.0),
@@ -409,8 +409,8 @@ void QPitchCore::reconfigure()
 
     // ** INITIALIZE BUFFERS ** //
     _buffer = CyclicBuffer(_options.fftFrameSize * sizeof(SampleType));
-    _tmp_sample_buffer.clear();
-    _tmp_sample_buffer.resize(_options.fftFrameSize);
+    _tmpSampleBuffer.clear();
+    _tmpSampleBuffer.resize(_options.fftFrameSize);
 
     // ** CREATE THE PITCH DETECTION INSTANCE ** //
     _pitchDetection = std::make_unique<PitchDetectionContext>(_options.sampleFrequency,
@@ -425,13 +425,13 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker)
     // No need to keep the lock when we copy the buffer contents.
     locker.unlock();
 
-    size_t frames_copied;
+    size_t framesCopied;
     {
         QMutexLocker bufferLocker(&_bufferMutex);
         // Dump the samples out of the cyclic buffer.
-        size_t bytes_copied = _buffer.copyLastBytes((unsigned char *)_tmp_sample_buffer.data(),
-                                                    _options.fftFrameSize * sizeof(SampleType));
-        frames_copied = bytes_copied / sizeof(SampleType);
+        size_t bytesCopied = _buffer.copyLastBytes((unsigned char *)_tmpSampleBuffer.data(),
+                                                   _options.fftFrameSize * sizeof(SampleType));
+        framesCopied = bytesCopied / sizeof(SampleType);
     }
 
     {
@@ -442,7 +442,7 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker)
     }
 
     // Transfer the samples to _pitchDetection, converting sample format (float -> double) at the same time.
-    _pitchDetection->loadSamples(_tmp_sample_buffer.data(), frames_copied);
+    _pitchDetection->loadSamples(_tmpSampleBuffer.data(), framesCopied);
 
     // Do pitch detection.
     double estimatedFrequency = _pitchDetection->runPitchDetectionAlgorithm();
@@ -453,7 +453,7 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker)
     {
         QMutexLocker visDataLocker(&_visualizationData.mutex);
 
-        _visualizationData.popluateSamples(_tmp_sample_buffer.data(), frames_copied,
+        _visualizationData.popluateSamples(_tmpSampleBuffer.data(), framesCopied,
                                            _options.sampleFrequency);
         _visualizationData.popluateSpectrum(_pitchDetection->getFreq2Buffer(),
                                             _pitchDetection->getFFTFrameSize(),

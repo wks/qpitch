@@ -94,22 +94,22 @@ std::optional<EstimatedNote> TuningParameters::estimateNote(const double estimat
     // Q_ASSERT(octaveNormalizedFrequency <= _noteFrequency[11]);
 
     double minPitchDeviation = _fundamentalFrequency * D_NOTE_LOG / 2.0;
-    unsigned int minPitchDeviation_index = 0;
-    double log_octaveNormalizedFreq = log2(octaveNormalizedFrequency);
+    unsigned int minPitchDeviationIndex = 0;
+    double logOctaveNormalizedFreq = log2(octaveNormalizedFrequency);
 
     for (unsigned int k = 0; k < 12; ++k) {
-        if (fabs(log_octaveNormalizedFreq - _noteScale[k]) < minPitchDeviation) {
-            minPitchDeviation = fabs(log_octaveNormalizedFreq - _noteScale[k]);
-            minPitchDeviation_index = k;
+        if (fabs(logOctaveNormalizedFreq - _noteScale[k]) < minPitchDeviation) {
+            minPitchDeviation = fabs(logOctaveNormalizedFreq - _noteScale[k]);
+            minPitchDeviationIndex = k;
         }
     }
 
     EstimatedNote result;
     result.estimatedFrequency = estimatedFrequency;
-    result.currentPitch = minPitchDeviation_index;
+    result.currentPitch = minPitchDeviationIndex;
     result.currentPitchDeviation =
-            (log_octaveNormalizedFreq - _noteScale[minPitchDeviation_index]) / D_NOTE_LOG;
-    result.noteFrequency = _noteFrequency[minPitchDeviation_index] * pow(2.0, octaveDeviation);
+            (logOctaveNormalizedFreq - _noteScale[minPitchDeviationIndex]) / D_NOTE_LOG;
+    result.noteFrequency = _noteFrequency[minPitchDeviationIndex] * pow(2.0, octaveDeviation);
 
     return result;
 }

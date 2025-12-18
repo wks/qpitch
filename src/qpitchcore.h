@@ -194,7 +194,7 @@ private: /* members */
     CyclicBuffer _buffer QPITCH_GUARDED_BY(
             _bufferMutex); //!< Buffer to store the input samples read in the callback
     std::vector<SampleType>
-            _tmp_sample_buffer; //!< A temporary buffer for dumping samples from the cyclic buffer
+            _tmpSampleBuffer; //!< A temporary buffer for dumping samples from the cyclic buffer
 
     // ** FFT ** //
     std::unique_ptr<PitchDetectionContext> _pitchDetection;

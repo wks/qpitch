@@ -15,15 +15,15 @@ PitchDetectionContext::PitchDetectionContext(uint32_t sampleFrequency, size_t ff
 
     // ** INITIALIZE FFT STRUCTURES ** //
     _window = (double *)fftw_malloc(sizeof(double) * fftFrameSize);
-    _fftw_in_time = (double *)fftw_malloc(sizeof(double) * fftFrameSize);
-    _fftw_mid_freq = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * fftFrameSize);
-    _fftw_mid_freq2 = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * outFrameSize);
-    _fftw_out_time_autocorr = (double *)fftw_malloc(sizeof(double) * outFrameSize);
+    _fftwInTime = (double *)fftw_malloc(sizeof(double) * fftFrameSize);
+    _fftwMidFreq = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * fftFrameSize);
+    _fftwMidFreq2 = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * outFrameSize);
+    _fftwOutTimeAutocorr = (double *)fftw_malloc(sizeof(double) * outFrameSize);
 
-    _fftw_plan_FFT =
-            fftw_plan_dft_r2c_1d(fftFrameSize, _fftw_in_time, _fftw_mid_freq, FFTW_ESTIMATE); // FFT
-    _fftw_plan_IFFT = fftw_plan_dft_c2r_1d(outFrameSize, _fftw_mid_freq2, _fftw_out_time_autocorr,
-                                           FFTW_ESTIMATE); // IFFT zero-padded
+    _fftwPlanFFT =
+            fftw_plan_dft_r2c_1d(fftFrameSize, _fftwInTime, _fftwMidFreq, FFTW_ESTIMATE); // FFT
+    _fftwPlanIFFT = fftw_plan_dft_c2r_1d(outFrameSize, _fftwMidFreq2, _fftwOutTimeAutocorr,
+                                         FFTW_ESTIMATE); // IFFT zero-padded
 
     generateHanningWindow(_window, fftFrameSize);
 }
@@ -31,13 +31,13 @@ PitchDetectionContext::PitchDetectionContext(uint32_t sampleFrequency, size_t ff
 PitchDetectionContext::~PitchDetectionContext()
 {
     // ** DESTROY FFTW STRUCTURES ** //
-    fftw_destroy_plan(_fftw_plan_FFT);
-    fftw_destroy_plan(_fftw_plan_IFFT);
+    fftw_destroy_plan(_fftwPlanFFT);
+    fftw_destroy_plan(_fftwPlanIFFT);
     fftw_free(_window);
-    fftw_free(_fftw_in_time);
-    fftw_free(_fftw_mid_freq);
-    fftw_free(_fftw_mid_freq2);
-    fftw_free(_fftw_out_time_autocorr);
+    fftw_free(_fftwInTime);
+    fftw_free(_fftwMidFreq);
+    fftw_free(_fftwMidFreq2);
+    fftw_free(_fftwOutTimeAutocorr);
 }
 
 size_t PitchDetectionContext::getFFTFrameSize() const
@@ -54,41 +54,41 @@ void PitchDetectionContext::loadSamples(float *samples, size_t inputSize)
 {
     size_t numCopy = std::min(inputSize, _fftFrameSize);
     for (size_t i = 0; i < numCopy; i++) {
-        _fftw_in_time[i] = samples[i] * _window[i];
+        _fftwInTime[i] = samples[i] * _window[i];
     }
     if (inputSize < _fftFrameSize) {
-        std::fill(&_fftw_in_time[inputSize], &_fftw_in_time[_fftFrameSize], 0);
+        std::fill(&_fftwInTime[inputSize], &_fftwInTime[_fftFrameSize], 0);
     }
 }
 
 double *PitchDetectionContext::getInputBuffer()
 {
-    return _fftw_in_time;
+    return _fftwInTime;
 }
 
 fftw_complex *PitchDetectionContext::getFreq2Buffer()
 {
-    return _fftw_mid_freq2;
+    return _fftwMidFreq2;
 }
 
 double *PitchDetectionContext::getAutoCorrBuffer()
 {
-    return _fftw_out_time_autocorr;
+    return _fftwOutTimeAutocorr;
 }
 
 double PitchDetectionContext::runPitchDetectionAlgorithm()
 {
     // ** ENSURE THAT FFTW STRUCTURES ARE VALID ** //
-    Q_ASSERT(_fftw_plan_FFT != nullptr);
-    Q_ASSERT(_fftw_plan_IFFT != nullptr);
-    Q_ASSERT(_fftw_in_time != nullptr);
-    Q_ASSERT(_fftw_mid_freq != nullptr);
-    Q_ASSERT(_fftw_mid_freq2 != nullptr);
-    Q_ASSERT(_fftw_out_time_autocorr != nullptr);
+    Q_ASSERT(_fftwPlanFFT != nullptr);
+    Q_ASSERT(_fftwPlanIFFT != nullptr);
+    Q_ASSERT(_fftwInTime != nullptr);
+    Q_ASSERT(_fftwMidFreq != nullptr);
+    Q_ASSERT(_fftwMidFreq2 != nullptr);
+    Q_ASSERT(_fftwOutTimeAutocorr != nullptr);
 
     // ** COMPUTE THE AUTOCORRELATION ** //
     // compute the FFT of the input signal
-    fftw_execute(_fftw_plan_FFT);
+    fftw_execute(_fftwPlanFFT);
 
     /*
      * compute the transform of the autocorrelation given in time domain by
@@ -108,18 +108,18 @@ double PitchDetectionContext::runPitchDetectionAlgorithm()
 
     // compute |.|^2 of the signal
     for (unsigned int k = 0; k < (_fftFrameSize / 2 + 1); ++k) {
-        _fftw_mid_freq2[k][0] = (_fftw_mid_freq[k][0] * _fftw_mid_freq[k][0])
-                + (_fftw_mid_freq[k][1] * _fftw_mid_freq[k][1]);
-        _fftw_mid_freq2[k][1] = 0.0;
+        _fftwMidFreq2[k][0] = (_fftwMidFreq[k][0] * _fftwMidFreq[k][0])
+                + (_fftwMidFreq[k][1] * _fftwMidFreq[k][1]);
+        _fftwMidFreq2[k][1] = 0.0;
     }
 
     // pad the FFT with zeros to increase resolution
-    memset(&(_fftw_mid_freq2[_fftFrameSize / 2 + 1][0]), 0,
+    memset(&(_fftwMidFreq2[_fftFrameSize / 2 + 1][0]), 0,
            ((ZERO_PADDING_FACTOR - 1) * _fftFrameSize + _fftFrameSize / 2 - 1)
                    * sizeof(fftw_complex));
 
     // compute the IFFT to obtain the autocorrelation in time domain
-    fftw_execute(_fftw_plan_IFFT);
+    fftw_execute(_fftwPlanIFFT);
 
     // find the maximum of the autocorrelation (rejecting the first peak)
     /*
@@ -131,16 +131,16 @@ double PitchDetectionContext::runPitchDetectionAlgorithm()
     // search for a minimum in the autocorrelation to reject the peak centered around 0
     unsigned int l;
     for (l = 0; (l < ((ZERO_PADDING_FACTOR / 2) * _fftFrameSize + 1))
-         && ((_fftw_out_time_autocorr[l + 1] < _fftw_out_time_autocorr[l])
-             || (_fftw_out_time_autocorr[l + 1] > 0.0));
+         && ((_fftwOutTimeAutocorr[l + 1] < _fftwOutTimeAutocorr[l])
+             || (_fftwOutTimeAutocorr[l + 1] > 0.0));
          ++l) { };
 
     // search for the maximum
     double maxAutoCorrelation = 0.0;
     unsigned int maxAutoCorrelation_index = 0;
     for (; l < ((ZERO_PADDING_FACTOR / 2) * _fftFrameSize + 1); ++l) {
-        if (_fftw_out_time_autocorr[l] > maxAutoCorrelation) {
-            maxAutoCorrelation = _fftw_out_time_autocorr[l];
+        if (_fftwOutTimeAutocorr[l] > maxAutoCorrelation) {
+            maxAutoCorrelation = _fftwOutTimeAutocorr[l];
             maxAutoCorrelation_index = l;
         }
     }

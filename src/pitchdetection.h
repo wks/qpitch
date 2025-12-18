@@ -36,15 +36,15 @@ private:
     double _sampleFrequency; //!< PortAudio stream
 
     // ** FFTW STRUCTURES ** //
-    fftw_plan _fftw_plan_FFT; //!< Plan to compute the FFT of a given signal
+    fftw_plan _fftwPlanFFT; //!< Plan to compute the FFT of a given signal
     fftw_plan
-            _fftw_plan_IFFT; //!< Plan to compute the IFFT of a given signal (with additional zero-padding
+            _fftwPlanIFFT; //!< Plan to compute the IFFT of a given signal (with additional zero-padding
     size_t _fftFrameSize; //!< Number of frames in the time-domain input
     double *_window; //!< The window to apply to the input signal
-    double *_fftw_in_time; //!< External buffer used to store the input signal in the time domain
+    double *_fftwInTime; //!< External buffer used to store the input signal in the time domain
+    fftw_complex
+            *_fftwMidFreq; //!< Buffer used to store the intermediate signal in the frequency domain
     fftw_complex *
-            _fftw_mid_freq; //!< Buffer used to store the intermediate signal in the frequency domain
-    fftw_complex *
-            _fftw_mid_freq2; //!< Buffer used to store the intermediate signal in the frequency domain for auto-correlation
-    double *_fftw_out_time_autocorr; //!< Buffer used to store the output signal in the time domain for the auto-correlation
+            _fftwMidFreq2; //!< Buffer used to store the intermediate signal in the frequency domain for auto-correlation
+    double *_fftwOutTimeAutocorr; //!< Buffer used to store the output signal in the time domain for the auto-correlation
 };

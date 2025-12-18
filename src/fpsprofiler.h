@@ -7,7 +7,7 @@ class FPSProfiler
 public:
     FPSProfiler(const char *title, bool printLog = false);
     void tick();
-    double get_fps();
+    double getFPS();
 
 private:
     using ClockType = std::chrono::steady_clock;
@@ -16,8 +16,8 @@ private:
     bool printLog;
     const char *title;
     bool started = false;
-    TimePointType start_time;
-    TimePointType last_time;
-    uint64_t tick_count = 0;
-    double cur_fps = 0.0;
+    TimePointType startTime;
+    TimePointType lastTime;
+    uint64_t tickCount = 0;
+    double curFPS = 0.0;
 };
