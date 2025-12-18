@@ -4,14 +4,15 @@
 
 #include <QPainter>
 
-const double PlotView::X_MARGIN            = 10;
-const double PlotView::Y_MARGIN            = 5;
-const double PlotView::LABEL_SPACING       = 3;
-const double PlotView::MINOR_TICK_HEIGHT   = 3;
-const double PlotView::MIDDLE_TICK_HEIGHT  = 5;
-const double PlotView::MAJOR_TICK_HEIGHT   = 7;
+const double PlotView::X_MARGIN = 10;
+const double PlotView::Y_MARGIN = 5;
+const double PlotView::LABEL_SPACING = 3;
+const double PlotView::MINOR_TICK_HEIGHT = 3;
+const double PlotView::MIDDLE_TICK_HEIGHT = 5;
+const double PlotView::MAJOR_TICK_HEIGHT = 7;
 
-PlotView::PlotView(QWidget *parent): QWidget(parent) {
+PlotView::PlotView(QWidget *parent) : QWidget(parent)
+{
     _title = "No title";
     _scaleKind = ScaleKind::Linear;
     _scaleRange = 0.0;
@@ -23,36 +24,44 @@ PlotView::PlotView(QWidget *parent): QWidget(parent) {
     _marker = std::nullopt;
 }
 
-void PlotView::setTitle(const QString &title) {
+void PlotView::setTitle(const QString &title)
+{
     _title = title;
 }
 
-void PlotView::setScaleKind(ScaleKind scaleKind) {
+void PlotView::setScaleKind(ScaleKind scaleKind)
+{
     _scaleKind = scaleKind;
 }
 
-void PlotView::setScaleRange(double scaleRange) {
+void PlotView::setScaleRange(double scaleRange)
+{
     _scaleRange = scaleRange;
 }
 
-void PlotView::setLinePen(const QPen &pen) {
+void PlotView::setLinePen(const QPen &pen)
+{
     _linePen = pen;
 }
 
-void PlotView::setMarkerPen(const QPen &pen) {
+void PlotView::setMarkerPen(const QPen &pen)
+{
     _markerPen = pen;
 }
 
-void PlotView::setData(const std::vector<double> &newData) {
+void PlotView::setData(const std::vector<double> &newData)
+{
     _data = newData;
     _dataPoints.resize(newData.size());
 }
 
-void PlotView::setMarker(std::optional<double> marker) {
+void PlotView::setMarker(std::optional<double> marker)
+{
     _marker = marker;
 }
 
-void PlotView::paintEvent(QPaintEvent* event) {
+void PlotView::paintEvent(QPaintEvent *event)
+{
     QPainter painter;
 
     painter.begin(this);
@@ -74,8 +83,8 @@ void PlotView::paintEvent(QPaintEvent* event) {
     // ** COMPUTE SIZES ** //
     QRectF rc = rect();
     QRectF marginedRc = rc.marginsRemoved(QMarginsF(X_MARGIN, Y_MARGIN, X_MARGIN, Y_MARGIN));
-    QRectF plotAreaRc = marginedRc.marginsRemoved(QMarginsF(
-        0.0, titleFontHeight + LABEL_SPACING, 0.0, scaleFontHeight + LABEL_SPACING));
+    QRectF plotAreaRc = marginedRc.marginsRemoved(
+            QMarginsF(0.0, titleFontHeight + LABEL_SPACING, 0.0, scaleFontHeight + LABEL_SPACING));
 
     // ** DRAW BOX ** //
     drawAxisBox(painter, plotAreaRc);
@@ -85,7 +94,8 @@ void PlotView::paintEvent(QPaintEvent* event) {
 
     // ** DRAW TITLE ** //
     painter.setPen(QPen(palette().text(), 0, Qt::SolidLine));
-    textHelper.drawTextCenteredUp(QPointF(plotAreaRc.center().x(), plotAreaRc.top() - LABEL_SPACING), _title);
+    textHelper.drawTextCenteredUp(
+            QPointF(plotAreaRc.center().x(), plotAreaRc.top() - LABEL_SPACING), _title);
 
     // ** DRAW CURVE ** //
     drawCurve(painter, plotAreaRc, 0.01);
@@ -94,12 +104,14 @@ void PlotView::paintEvent(QPaintEvent* event) {
     if (_marker.has_value()) {
         double markerValue = _marker.value();
         painter.setPen(_markerPen);
-        double markerX = std::lerp(plotAreaRc.left(), plotAreaRc.right(), markerValue / _scaleRange);
+        double markerX =
+                std::lerp(plotAreaRc.left(), plotAreaRc.right(), markerValue / _scaleRange);
         painter.drawLine(QPointF(markerX, plotAreaRc.top()), QPointF(markerX, plotAreaRc.bottom()));
     }
 }
 
-void PlotView::drawAxisBox(QPainter& painter, const QRectF &rc) {
+void PlotView::drawAxisBox(QPainter &painter, const QRectF &rc)
+{
     // Draw the box with filling
     painter.setPen(QPen(palette().dark(), 1.0, Qt::SolidLine));
     painter.setBrush(palette().light());
@@ -110,7 +122,8 @@ void PlotView::drawAxisBox(QPainter& painter, const QRectF &rc) {
     painter.drawLine(QPointF(rc.left(), rc.center().y()), QPointF(rc.right(), rc.center().y()));
 }
 
-void PlotView::drawLinearAxis(QPainter& painter, const QRectF &rc) {
+void PlotView::drawLinearAxis(QPainter &painter, const QRectF &rc)
+{
     painter.save();
     QFont scaleFont = painter.font();
     scaleFont.setPointSize(scaleFont.pointSize() - 2);
@@ -123,8 +136,8 @@ void PlotView::drawLinearAxis(QPainter& painter, const QRectF &rc) {
 
     auto drawTickAndLabel = [&](double xTick, int level, int maxLevel, double value) {
         double tickHeight = level == 0 ? MAJOR_TICK_HEIGHT
-                          : level == 1 ? MIDDLE_TICK_HEIGHT
-                          : MINOR_TICK_HEIGHT;
+                : level == 1           ? MIDDLE_TICK_HEIGHT
+                                       : MINOR_TICK_HEIGHT;
         painter.setPen(penTick);
         painter.drawLine(QPointF(xTick, rc.bottom()), QPointF(xTick, rc.bottom() - tickHeight));
 
@@ -168,19 +181,16 @@ void PlotView::drawLinearAxis(QPainter& painter, const QRectF &rc) {
                 break;
             }
 
-            int level = mi % 10 == 0 ? 0
-                      : mi % 5 == 0 ? 1
-                      : 2;
+            int level = mi % 10 == 0 ? 0 : mi % 5 == 0 ? 1 : 2;
             double xTick = std::lerp(rc.left(), rc.right(), value / xAxisRange);
             drawTickAndLabel(xTick, level, maxLevel, value);
         }
     }
 
-    painter.restore( );
+    painter.restore();
 }
 
-
-void PlotView::drawCurve(QPainter& painter, const QRectF &rc, const double autoScaleThreshold)
+void PlotView::drawCurve(QPainter &painter, const QRectF &rc, const double autoScaleThreshold)
 {
     // enable antialiasing and plot signal samples
     painter.setPen(_linePen);
@@ -198,7 +208,7 @@ void PlotView::drawCurve(QPainter& painter, const QRectF &rc, const double autoS
     double limitValue = std::max(std::fabs(*maxValue), std::fabs(*minValue));
 
     // y-axis is upside-down so use a negative scale factor to mirror the plot
-    double scaleFactor  = -(0.95 * rc.height() / 2) / std::max(limitValue, autoScaleThreshold);
+    double scaleFactor = -(0.95 * rc.height() / 2) / std::max(limitValue, autoScaleThreshold);
 
     double xLeft = rc.left();
     double xRight = rc.right();

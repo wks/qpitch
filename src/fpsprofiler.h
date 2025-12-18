@@ -2,11 +2,13 @@
 
 #include <chrono>
 
-class FPSProfiler {
+class FPSProfiler
+{
 public:
     FPSProfiler(const char *title, bool printLog = false);
     void tick();
     double get_fps();
+
 private:
     using ClockType = std::chrono::steady_clock;
     using TimePointType = std::chrono::time_point<ClockType>;
@@ -19,5 +21,3 @@ private:
     uint64_t tick_count = 0;
     double cur_fps = 0.0;
 };
-
-

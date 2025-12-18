@@ -3,7 +3,8 @@
 #include <cstdlib>
 #include <vector>
 
-class CyclicBuffer {
+class CyclicBuffer
+{
 public:
     explicit CyclicBuffer(size_t capacity);
     // Append len bytes from src to the cyclic buffer.

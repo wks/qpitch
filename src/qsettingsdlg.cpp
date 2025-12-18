@@ -24,32 +24,30 @@
 
 #include <QPushButton>
 
-QSettingsDlg::QSettingsDlg( const QPitchSettings& settings, QWidget* parent ) : QDialog( parent )
+QSettingsDlg::QSettingsDlg(const QPitchSettings &settings, QWidget *parent) : QDialog(parent)
 {
     // ** SETUP THE MAIN WINDOW ** //
-    _sd.setupUi( this );
+    _sd.setupUi(this);
 
     // ** SETUP CONNECTIONS ** //
-    connect( _sd.buttonBox, &QDialogButtonBox::accepted,
-        this, &QSettingsDlg::acceptSettings);
-    connect( _sd.buttonBox->button( QDialogButtonBox::RestoreDefaults ), &QPushButton::pressed,
-        this, &QSettingsDlg::restoreDefaultSettings);
+    connect(_sd.buttonBox, &QDialogButtonBox::accepted, this, &QSettingsDlg::acceptSettings);
+    connect(_sd.buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::pressed, this,
+            &QSettingsDlg::restoreDefaultSettings);
 
     load(settings);
 }
 
-const QPitchSettings& QSettingsDlg::result()
+const QPitchSettings &QSettingsDlg::result()
 {
     return _result;
 }
 
-void QSettingsDlg::acceptSettings( )
+void QSettingsDlg::acceptSettings()
 {
     dump(_result);
 }
 
-
-void QSettingsDlg::restoreDefaultSettings( )
+void QSettingsDlg::restoreDefaultSettings()
 {
     QPitchSettings defaultSettings;
     load(defaultSettings);
@@ -57,40 +55,42 @@ void QSettingsDlg::restoreDefaultSettings( )
 
 void QSettingsDlg::load(const QPitchSettings &settings)
 {
-    _sd.comboBox_sampleFrequency->setCurrentIndex( _sd.comboBox_sampleFrequency->findText( QString::number( settings.sampleFrequency ) ) );
-    _sd.comboBox_frameSize->setCurrentIndex( _sd.comboBox_frameSize->findText( QString::number( settings.fftFrameSize ) ) );
-    _sd.doubleSpinBox_fundamentalFrequency->setValue( settings.fundamentalFrequency );
+    _sd.comboBox_sampleFrequency->setCurrentIndex(
+            _sd.comboBox_sampleFrequency->findText(QString::number(settings.sampleFrequency)));
+    _sd.comboBox_frameSize->setCurrentIndex(
+            _sd.comboBox_frameSize->findText(QString::number(settings.fftFrameSize)));
+    _sd.doubleSpinBox_fundamentalFrequency->setValue(settings.fundamentalFrequency);
 
-    switch( settings.tuningNotation ) {
-        default:
-        case TuningNotation::US:
-            _sd.radioButton_scaleUs->setChecked( true );
-            break;
+    switch (settings.tuningNotation) {
+    default:
+    case TuningNotation::US:
+        _sd.radioButton_scaleUs->setChecked(true);
+        break;
 
-        case TuningNotation::FRENCH:
-            _sd.radioButton_scaleFrench->setChecked( true );
-            break;
+    case TuningNotation::FRENCH:
+        _sd.radioButton_scaleFrench->setChecked(true);
+        break;
 
-        case TuningNotation::GERMAN:
-            _sd.radioButton_scaleGerman->setChecked( true );
-            break;
+    case TuningNotation::GERMAN:
+        _sd.radioButton_scaleGerman->setChecked(true);
+        break;
     }
 }
 
 void QSettingsDlg::dump(QPitchSettings &settings)
 {
     // ** UPDATE THE APPLICATION SETTINGS ** //
-    settings.sampleFrequency = _sd.comboBox_sampleFrequency->currentText( ).toUInt( );
-    settings.fftFrameSize = _sd.comboBox_frameSize->currentText( ).toUInt( );
-    settings.fundamentalFrequency = _sd.doubleSpinBox_fundamentalFrequency->value( );
+    settings.sampleFrequency = _sd.comboBox_sampleFrequency->currentText().toUInt();
+    settings.fftFrameSize = _sd.comboBox_frameSize->currentText().toUInt();
+    settings.fundamentalFrequency = _sd.doubleSpinBox_fundamentalFrequency->value();
 
     settings.tuningNotation = TuningNotation::US;
 
-    if ( _sd.radioButton_scaleUs->isChecked( ) ) {
+    if (_sd.radioButton_scaleUs->isChecked()) {
         settings.tuningNotation = TuningNotation::US;
-    } else if ( _sd.radioButton_scaleFrench->isChecked( ) ) {
+    } else if (_sd.radioButton_scaleFrench->isChecked()) {
         settings.tuningNotation = TuningNotation::FRENCH;
-    } else if ( _sd.radioButton_scaleGerman->isChecked( ) ) {
+    } else if (_sd.radioButton_scaleGerman->isChecked()) {
         settings.tuningNotation = TuningNotation::GERMAN;
     }
 }

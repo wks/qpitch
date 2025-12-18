@@ -40,9 +40,9 @@
  * tuning notation (US, French and German notation).
  */
 
-class QSettingsDlg : public QDialog {
+class QSettingsDlg : public QDialog
+{
     Q_OBJECT
-
 
 public: /* members */
     //! Deafult constructor.
@@ -50,27 +50,26 @@ public: /* members */
      * \param[in] settings structure with the current audio stream and tuning parameters
      * \param[in] parent handle to the parent widget
      */
-    QSettingsDlg( const QPitchSettings& settings, QWidget* parent = 0 );
+    QSettingsDlg(const QPitchSettings &settings, QWidget *parent = 0);
 
     //! Return the result of setting.  Only call it after the setting was accepted.
-    const QPitchSettings& result();
-
+    const QPitchSettings &result();
 
 public slots:
     //! Restore default application settings.
-    void restoreDefaultSettings( );
+    void restoreDefaultSettings();
 
     //! Accept the application settings in the dialog.
-    void acceptSettings( );
+    void acceptSettings();
 
 private: /* members */
     // ** Qt WIDGETS ** //
-    Ui::QSettingsDlg    _sd;                            //!< Dialog created with Qt-Designer
-    QPitchSettings _result;                             //!< The result to be loaded
+    Ui::QSettingsDlg _sd; //!< Dialog created with Qt-Designer
+    QPitchSettings _result; //!< The result to be loaded
 
     // ** METHODS ** //
-    void load(const QPitchSettings &settings);  //!< Load widget contents
-    void dump(QPitchSettings &settings);        //!< Dump widget contents
+    void load(const QPitchSettings &settings); //!< Load widget contents
+    void dump(QPitchSettings &settings); //!< Dump widget contents
 };
 
 #endif /* __QSETTINGSDLG_H_ */

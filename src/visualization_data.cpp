@@ -2,17 +2,19 @@
 
 #include <algorithm>
 
-VisualizationData::VisualizationData(size_t plotData_size):
-    plotData_size(plotData_size),
-    plotSample(plotData_size),
-    plotSpectrum(plotData_size),
-    plotAutoCorr(plotData_size),
-    plotSampleRange(0.0),
-    estimatedFrequency(0.0)
+VisualizationData::VisualizationData(size_t plotData_size)
+    : plotData_size(plotData_size),
+      plotSample(plotData_size),
+      plotSpectrum(plotData_size),
+      plotAutoCorr(plotData_size),
+      plotSampleRange(0.0),
+      estimatedFrequency(0.0)
 {
 }
 
-void VisualizationData::popluateSamples(float *srcSamples, size_t srcNumSamples, uint32_t sampleFrequency) {
+void VisualizationData::popluateSamples(float *srcSamples, size_t srcNumSamples,
+                                        uint32_t sampleFrequency)
+{
     // Bail out for extreme cases.
     if (srcNumSamples == 0) {
         std::fill(plotSample.begin(), plotSample.end(), 0.0);
@@ -50,7 +52,9 @@ void VisualizationData::popluateSamples(float *srcSamples, size_t srcNumSamples,
 
     plotSampleRange = 1000.0 * plotData_size / sampleFrequency;
 }
-void VisualizationData::popluateSpectrum(fftw_complex *freqDomain, size_t srcSize, uint32_t sampleFrequency) {
+void VisualizationData::popluateSpectrum(fftw_complex *freqDomain, size_t srcSize,
+                                         uint32_t sampleFrequency)
+{
     size_t available = srcSize / 2;
     size_t copyLen = std::min(plotData_size, available);
 
@@ -65,7 +69,9 @@ void VisualizationData::popluateSpectrum(fftw_complex *freqDomain, size_t srcSiz
     plotSpectrumRange = (double)sampleFrequency * plotData_size / srcSize;
 }
 
-void VisualizationData::popluateAutoCorr(double *timeDomain, size_t srcSize, uint32_t sampleFrequency, size_t multiplier) {
+void VisualizationData::popluateAutoCorr(double *timeDomain, size_t srcSize,
+                                         uint32_t sampleFrequency, size_t multiplier)
+{
     size_t available = srcSize / multiplier;
     size_t copyLen = std::min(plotData_size, available);
 

@@ -30,27 +30,26 @@
 #include <cmath>
 
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
-    #include <cmath>
+#  include <cmath>
 #endif
 
-class QPitchCorePrivate {
-
+class QPitchCorePrivate
+{
 };
 
-
-QPitchCore::QPitchCore( QObject* parent, const unsigned int plotPlot_size, QPitchCoreOptions options) :
-    QThread( parent ),
-    _bufferUpdated(false),
-    _stopRequested(false),
-    _options(options),
-    _stream(nullptr),
-    _buffer(0),
-    _visualizationData(plotPlot_size),
-    _callbackProfilingEnabled(false),
-    _callbackProfilingStarted(false),
-    _lastCallbackTime(0.0),
-    _lastAdcTime(0.0),
-    _callbackProfiler("QPitchCore callback", true)
+QPitchCore::QPitchCore(QObject *parent, const unsigned int plotPlot_size, QPitchCoreOptions options)
+    : QThread(parent),
+      _bufferUpdated(false),
+      _stopRequested(false),
+      _options(options),
+      _stream(nullptr),
+      _buffer(0),
+      _visualizationData(plotPlot_size),
+      _callbackProfilingEnabled(false),
+      _callbackProfilingStarted(false),
+      _lastCallbackTime(0.0),
+      _lastAdcTime(0.0),
+      _callbackProfiler("QPitchCore callback", true)
 {
     {
         const char *profEnv = getenv("QPITCH_CORE_CALLBACK_PROFILING");
@@ -66,9 +65,9 @@ QPitchCore::QPitchCore( QObject* parent, const unsigned int plotPlot_size, QPitc
     _private = std::make_unique<QPitchCorePrivate>();
 
     // ** INITIALIZE PORTAUDIO ** //
-    PaError err = Pa_Initialize( );
-    if ( err != paNoError ) {
-        throw QPaSoundInputException( Pa_GetErrorText( err ) );
+    PaError err = Pa_Initialize();
+    if (err != paNoError) {
+        throw QPaSoundInputException(Pa_GetErrorText(err));
     }
 
     reconfigure();
@@ -76,54 +75,57 @@ QPitchCore::QPitchCore( QObject* parent, const unsigned int plotPlot_size, QPitc
     Q_ASSERT(!_stopRequested);
 }
 
-
-QPitchCore::~QPitchCore( )
+QPitchCore::~QPitchCore()
 {
     // ** ENSURE THAT THE STREAM IS STOPPED AND THE THREAD NOT RUNNING ** //
-    Q_ASSERT( _stream == nullptr );
-    Q_ASSERT( _stopRequested == true );
-    Q_ASSERT( ! this->isRunning( ) );
+    Q_ASSERT(_stream == nullptr);
+    Q_ASSERT(_stopRequested == true);
+    Q_ASSERT(!this->isRunning());
 
     // ** TERMINATE PORTAUDIO ** //
-    Pa_Terminate( );
+    Pa_Terminate();
 
     // ** RELEASE RESOURCES ** //
 }
 
-void QPitchCore::setOptions(QPitchCoreOptions options) {
+void QPitchCore::setOptions(QPitchCoreOptions options)
+{
     QMutexLocker locker(&_mutex);
     _pendingOptions = options;
     _cond.wakeOne();
 }
 
-void QPitchCore::requestStop() {
+void QPitchCore::requestStop()
+{
     QMutexLocker locker(&_mutex);
     _stopRequested = true;
     _cond.wakeOne();
 }
 
-void QPitchCore::setCallbackProfilingEnabled(bool enabled) {
+void QPitchCore::setCallbackProfilingEnabled(bool enabled)
+{
     _callbackProfilingEnabled = enabled;
 }
 
 void QPitchCore::startStream()
 {
     // This method is only callable by the QPitchCore thread itself.
-    Q_ASSERT( QThread::currentThread() == this );
+    Q_ASSERT(QThread::currentThread() == this);
 
     // The stream should not have been started.
-    Q_ASSERT( _stream == nullptr );
+    Q_ASSERT(_stream == nullptr);
 
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
     // create the artificial square wave with some harmonics :: 110.0 Hz
-    for ( unsigned int k = 0 ; k < 4410 ; ++k ) {
-        _referenceSineWave[k] = ( (sin( 2 * M_PI * 110.0 * (double) k / sampleFrequency ) >= 0.0) ? 1000 : -1000 );
+    for (unsigned int k = 0; k < 4410; ++k) {
+        _referenceSineWave[k] =
+                ((sin(2 * M_PI * 110.0 * (double)k / sampleFrequency) >= 0.0) ? 1000 : -1000);
     }
     _referenceSineWave_index = 0;
 #endif
 
     // Parameters of the input audio stream
-    PaStreamParameters  inputParameters;
+    PaStreamParameters inputParameters;
 
     // We dump the host API and device list for debug purposes.
     qDebug("Enumerating host APIs...");
@@ -134,10 +136,9 @@ void QPitchCore::startStream()
             PaDeviceIndex deviceIndex = Pa_HostApiDeviceIndexToDeviceIndex(i, j);
             const PaDeviceInfo *info = Pa_GetDeviceInfo(deviceIndex);
             if (info->maxInputChannels > 1) {
-                qDebug("  %d: [%d] %s (%d channels, %lf Hz, %lf ms to %lf ms)",
-                    j, deviceIndex, info->name,
-                    info->maxInputChannels, info->defaultSampleRate,
-                    info->defaultLowInputLatency * 1000, info->defaultHighInputLatency * 1000);
+                qDebug("  %d: [%d] %s (%d channels, %lf Hz, %lf ms to %lf ms)", j, deviceIndex,
+                       info->name, info->maxInputChannels, info->defaultSampleRate,
+                       info->defaultLowInputLatency * 1000, info->defaultHighInputLatency * 1000);
             } else {
                 qDebug("  %d: [%d] %s (no input)", j, deviceIndex, info->name);
             }
@@ -154,7 +155,7 @@ void QPitchCore::startStream()
     // We list the devices for debug purpose.
     qDebug("Enumerating PortAudio devices...");
     for (int i = 0, end = Pa_GetDeviceCount(); i != end; ++i) {
-        PaDeviceInfo const* info = Pa_GetDeviceInfo(i);
+        PaDeviceInfo const *info = Pa_GetDeviceInfo(i);
         if (!info) {
             qDebug("  [%d] no info", i);
             continue;
@@ -167,12 +168,12 @@ void QPitchCore::startStream()
 
     // ** CONFIGURE THE INPUT AUDIO STREAM ** //
     if (inputParameters.device == -1) {
-        inputParameters.device                  =   Pa_GetDefaultInputDevice( );                // default input device
+        inputParameters.device = Pa_GetDefaultInputDevice(); // default input device
     }
-    inputParameters.channelCount                =   1;                                          // mono input
-    inputParameters.sampleFormat                =   PA_SAMPLE_FORMAT;                           // the one we specified
-    inputParameters.suggestedLatency            =   1.0 / 60.0;                                 // Try to get 60 fps.
-    inputParameters.hostApiSpecificStreamInfo   =   nullptr;
+    inputParameters.channelCount = 1; // mono input
+    inputParameters.sampleFormat = PA_SAMPLE_FORMAT; // the one we specified
+    inputParameters.suggestedLatency = 1.0 / 60.0; // Try to get 60 fps.
+    inputParameters.hostApiSpecificStreamInfo = nullptr;
 
     // ** OPEN AN AUDIO INPUT STREAM ** //
 
@@ -189,81 +190,81 @@ void QPitchCore::startStream()
     // TODO: Allow the user to set (throttle) the frequency at which the QPitchCore processes the
     // buffer and therefore the GUI refresh rate to the user's desired setting, such as 60 FPS.
     unsigned long framesPerBuffer = paFramesPerBufferUnspecified;
-    PaError err = Pa_OpenStream(
-        &_stream,
-        &inputParameters,
-        nullptr,                                   // no output
-        _options.sampleFrequency,               // sample rate (default 44100 Hz)
-        framesPerBuffer,                        // frames per buffer (not specified)
-        paClipOff,                              // disable clipping
-        paCallback,                             // callback
-        this                                    // pointer to user data
+    PaError err = Pa_OpenStream(&_stream, &inputParameters,
+                                nullptr, // no output
+                                _options.sampleFrequency, // sample rate (default 44100 Hz)
+                                framesPerBuffer, // frames per buffer (not specified)
+                                paClipOff, // disable clipping
+                                paCallback, // callback
+                                this // pointer to user data
     );
 
-    if ( err != paNoError ) {
-        throw QPaSoundInputException( Pa_GetErrorText( err ) );
+    if (err != paNoError) {
+        throw QPaSoundInputException(Pa_GetErrorText(err));
     }
 
     // ** START PORTAUDIO STREAM ** //
-    err = Pa_StartStream( _stream );
-    if( err != paNoError ) {
-        throw QPaSoundInputException( Pa_GetErrorText( err ) );
+    err = Pa_StartStream(_stream);
+    if (err != paNoError) {
+        throw QPaSoundInputException(Pa_GetErrorText(err));
     }
 
     // ** ENSURE THAT THE STREAM IS STARTED AND THE THREAD IS RUNNING ** //
-    Q_ASSERT( _stream != nullptr );
+    Q_ASSERT(_stream != nullptr);
 
-    const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo( inputParameters.device );
+    const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(inputParameters.device);
     QString device = QString(deviceInfo->name);
-    QString hostAPI = QString(Pa_GetHostApiInfo( Pa_GetDeviceInfo( inputParameters.device )->hostApi )->name);
+    QString hostAPI =
+            QString(Pa_GetHostApiInfo(Pa_GetDeviceInfo(inputParameters.device)->hostApi)->name);
     emit portAudioStreamStarted(device, hostAPI);
 
-    qDebug( ) << "QPitchCore::startStream";
-    qDebug( ) << " - sampleFrequency  = " << _options.sampleFrequency;
-    qDebug( ) << " - suggestedLatency = " << inputParameters.suggestedLatency;
-    qDebug( ) << " - fftFrameSize     = " << _options.fftFrameSize << "\n";
+    qDebug() << "QPitchCore::startStream";
+    qDebug() << " - sampleFrequency  = " << _options.sampleFrequency;
+    qDebug() << " - suggestedLatency = " << inputParameters.suggestedLatency;
+    qDebug() << " - fftFrameSize     = " << _options.fftFrameSize << "\n";
 }
 
-
-void QPitchCore::stopStream( )
+void QPitchCore::stopStream()
 {
     // This method is only callable by the QPitchCore thread itself.
-    Q_ASSERT( QThread::currentThread() == this );
+    Q_ASSERT(QThread::currentThread() == this);
 
     // ** ENSURE THAT THE STREAM IS STARTED ** //
-    Q_ASSERT( _stream           != nullptr );
+    Q_ASSERT(_stream != nullptr);
 
     // ** STOP PORTAUDIO STREAM ** //
-    PaError err = Pa_StopStream( _stream );
-    if( err != paNoError ) {
-        throw QPaSoundInputException( Pa_GetErrorText( err ) );
+    PaError err = Pa_StopStream(_stream);
+    if (err != paNoError) {
+        throw QPaSoundInputException(Pa_GetErrorText(err));
     }
 
     // ** CLOSE PORTAUDIO STREAM ** //
-    err = Pa_CloseStream( _stream );
-    if( err != paNoError ) {
-        throw QPaSoundInputException( Pa_GetErrorText( err ) );
+    err = Pa_CloseStream(_stream);
+    if (err != paNoError) {
+        throw QPaSoundInputException(Pa_GetErrorText(err));
     }
 
     // ** RELEASE PITCH DETECTION INSTANCE ** //
     _pitchDetection.reset();
 
     // ** RELEASE RESOURCES ** //
-    _stream         = nullptr;
+    _stream = nullptr;
 }
 
-int QPitchCore::paCallback( const void* input, void* /*output*/, unsigned long frameCount,
-        const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags, void* userData )
+int QPitchCore::paCallback(const void *input, void * /*output*/, unsigned long frameCount,
+                           const PaStreamCallbackTimeInfo *timeInfo,
+                           PaStreamCallbackFlags statusFlags, void *userData)
 {
-    Q_ASSERT( input     != nullptr );
-    Q_ASSERT( userData  != nullptr );
+    Q_ASSERT(input != nullptr);
+    Q_ASSERT(userData != nullptr);
 
-    return( static_cast<QPitchCore*>( userData )->paStoreInputBufferCallback( (const SampleType*)input, frameCount,
-        timeInfo, statusFlags ) );
+    return (static_cast<QPitchCore *>(userData)->paStoreInputBufferCallback(
+            (const SampleType *)input, frameCount, timeInfo, statusFlags));
 }
 
-int QPitchCore::paStoreInputBufferCallback( const SampleType* input, unsigned long frameCount,
-        const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags)
+int QPitchCore::paStoreInputBufferCallback(const SampleType *input, unsigned long frameCount,
+                                           const PaStreamCallbackTimeInfo *timeInfo,
+                                           PaStreamCallbackFlags statusFlags)
 {
     Q_ASSERT(QThread::currentThread() != this);
 
@@ -279,8 +280,10 @@ int QPitchCore::paStoreInputBufferCallback( const SampleType* input, unsigned lo
         } else {
             double callbackDiff = timeInfo->currentTime - _lastCallbackTime;
             double adcDiff = timeInfo->inputBufferAdcTime - _lastAdcTime;
-            qDebug("[QPitchCore callback] Time profiling: callback: %lf (+%lf), ADC: %lf (+%lf), frames: %ld",
-                timeInfo->currentTime, callbackDiff, timeInfo->inputBufferAdcTime, adcDiff, frameCount);
+            qDebug("[QPitchCore callback] Time profiling: callback: %lf (+%lf), ADC: %lf (+%lf), "
+                   "frames: %ld",
+                   timeInfo->currentTime, callbackDiff, timeInfo->inputBufferAdcTime, adcDiff,
+                   frameCount);
         }
 
         _lastCallbackTime = timeInfo->currentTime;
@@ -295,15 +298,15 @@ int QPitchCore::paStoreInputBufferCallback( const SampleType* input, unsigned lo
         // ** COPY BUFFER ** //
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
         // ** USE THE REFERENCE SINE WAVE INPUT SIGNAL ** //
-        for ( unsigned int k = 0 ; k < frameCount ; ++k ) {
+        for (unsigned int k = 0; k < frameCount; ++k) {
             _buffer[k] = _referenceSineWave[_referenceSineWave_index++];
-            if ( _referenceSineWave_index >= 4410 ) {
+            if (_referenceSineWave_index >= 4410) {
                 _referenceSineWave_index = 0;
             }
         }
 #else
         // ** READ THE REAL AUDIO SIGNAL ** //
-        _buffer.append((const unsigned char*)input, frameCount * sizeof( SampleType ) );
+        _buffer.append((const unsigned char *)input, frameCount * sizeof(SampleType));
 #endif
     }
 
@@ -320,41 +323,43 @@ int QPitchCore::paStoreInputBufferCallback( const SampleType* input, unsigned lo
         bufferWasUpdated = _bufferUpdated;
 
         _bufferUpdated = true;
-        _cond.wakeOne( );
+        _cond.wakeOne();
     }
 
     if (profilingEnabled) {
-        std::chrono::time_point<std::chrono::steady_clock> callbackExit = std::chrono::steady_clock::now();
-        double callbackDuration = std::chrono::duration<double>(callbackExit - callbackEnter).count();
+        std::chrono::time_point<std::chrono::steady_clock> callbackExit =
+                std::chrono::steady_clock::now();
+        double callbackDuration =
+                std::chrono::duration<double>(callbackExit - callbackEnter).count();
         qDebug("[QPitchCore callback] Callback duration: %lf", callbackDuration);
 
-        if ( _bufferUpdated ) {
+        if (_bufferUpdated) {
             // buffer is not processed since the last callback
-            qDebug("[QPitchCore callback] The QPitchCore thread failed to keep up with the callback!");
+            qDebug("[QPitchCore callback] The QPitchCore thread failed to keep up with the "
+                   "callback!");
         }
     }
 
     return paContinue;
 }
 
-
-void QPitchCore::run( )
+void QPitchCore::run()
 {
     startStream();
 
     // ** ENSURE THAT FFTW STRUCTURES ARE VALID ** //
-    Q_ASSERT( _pitchDetection );
+    Q_ASSERT(_pitchDetection);
 
     {
         QMutexLocker locker(&_mutex);
-        while(true) {
+        while (true) {
             // Wait until either the buffer is updated or _running is set to false.
             while (!_stopRequested && !_pendingOptions && !_bufferUpdated) {
-                _cond.wait( &_mutex );
+                _cond.wait(&_mutex);
             }
 
             // lock the buffer
-            if ( _stopRequested ) {
+            if (_stopRequested) {
                 qDebug("Stop requested! Stop!");
                 break;
             }
@@ -374,7 +379,8 @@ void QPitchCore::run( )
     // TODO: Signal stopped event.
 }
 
-void QPitchCore::onOptionsChanged(QMutexLocker<QMutex> &locker) {
+void QPitchCore::onOptionsChanged(QMutexLocker<QMutex> &locker)
+{
     // Prevent deadlock with PortAudio's callback thread.
     locker.unlock();
 
@@ -396,7 +402,8 @@ void QPitchCore::onOptionsChanged(QMutexLocker<QMutex> &locker) {
     locker.relock();
 }
 
-void QPitchCore::reconfigure() {
+void QPitchCore::reconfigure()
+{
     // The stream must be stopped.
     Q_ASSERT(_stream == nullptr);
 
@@ -406,10 +413,12 @@ void QPitchCore::reconfigure() {
     _tmp_sample_buffer.resize(_options.fftFrameSize);
 
     // ** CREATE THE PITCH DETECTION INSTANCE ** //
-    _pitchDetection = std::make_unique<PitchDetectionContext>(_options.sampleFrequency, _options.fftFrameSize);
+    _pitchDetection = std::make_unique<PitchDetectionContext>(_options.sampleFrequency,
+                                                              _options.fftFrameSize);
 }
 
-void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker) {
+void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker)
+{
     Q_ASSERT(_bufferUpdated);
     Q_ASSERT(_pitchDetection);
 
@@ -420,7 +429,8 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker) {
     {
         QMutexLocker bufferLocker(&_bufferMutex);
         // Dump the samples out of the cyclic buffer.
-        size_t bytes_copied = _buffer.copyLastBytes((unsigned char*)_tmp_sample_buffer.data(), _options.fftFrameSize * sizeof(SampleType));
+        size_t bytes_copied = _buffer.copyLastBytes((unsigned char *)_tmp_sample_buffer.data(),
+                                                    _options.fftFrameSize * sizeof(SampleType));
         frames_copied = bytes_copied / sizeof(SampleType);
     }
 
@@ -436,25 +446,28 @@ void QPitchCore::processBuffer(QMutexLocker<QMutex> &locker) {
 
     // Do pitch detection.
     double estimatedFrequency = _pitchDetection->runPitchDetectionAlgorithm();
-    std::optional<EstimatedNote> estimatedNote = _options.tuningParameters.estimateNote(estimatedFrequency);
+    std::optional<EstimatedNote> estimatedNote =
+            _options.tuningParameters.estimateNote(estimatedFrequency);
 
     // Populate visualization data.
     {
         QMutexLocker visDataLocker(&_visualizationData.mutex);
 
-        _visualizationData.popluateSamples(_tmp_sample_buffer.data(), frames_copied, _options.sampleFrequency);
-        _visualizationData.popluateSpectrum(_pitchDetection->getFreq2Buffer(), _pitchDetection->getFFTFrameSize(), _options.sampleFrequency);
-        _visualizationData.popluateAutoCorr(_pitchDetection->getAutoCorrBuffer(),
-            _pitchDetection->getOutFrameSize(),
-            _options.sampleFrequency,
-            PitchDetectionContext::ZERO_PADDING_FACTOR);
+        _visualizationData.popluateSamples(_tmp_sample_buffer.data(), frames_copied,
+                                           _options.sampleFrequency);
+        _visualizationData.popluateSpectrum(_pitchDetection->getFreq2Buffer(),
+                                            _pitchDetection->getFFTFrameSize(),
+                                            _options.sampleFrequency);
+        _visualizationData.popluateAutoCorr(
+                _pitchDetection->getAutoCorrBuffer(), _pitchDetection->getOutFrameSize(),
+                _options.sampleFrequency, PitchDetectionContext::ZERO_PADDING_FACTOR);
 
         _visualizationData.estimatedFrequency = estimatedFrequency;
-        _visualizationData.estimatedNote = _options.tuningParameters.estimateNote(_visualizationData.estimatedFrequency);
+        _visualizationData.estimatedNote =
+                _options.tuningParameters.estimateNote(_visualizationData.estimatedFrequency);
     }
 
     emit visualizationDataUpdated(&_visualizationData);
 
     locker.relock();
 }
-

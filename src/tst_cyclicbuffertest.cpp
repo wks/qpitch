@@ -9,25 +9,35 @@ QTEST_MAIN(TestCyclicBuffer)
 
 static unsigned char iotaBuffer[256];
 
-static void checkLastBytes(const CyclicBuffer &buffer, size_t len, size_t actualCopy, size_t iotaStart) {
-    unsigned char resultBuffer[256] {0};
+static void checkLastBytes(const CyclicBuffer &buffer, size_t len, size_t actualCopy,
+                           size_t iotaStart)
+{
+    unsigned char resultBuffer[256]{ 0 };
     size_t actualCopied = buffer.copyLastBytes(resultBuffer, len);
     QCOMPARE(actualCopied, actualCopy);
 
     for (size_t i = 0; i < actualCopy; i++) {
         size_t iotaIndex = iotaStart + i;
         QVERIFY2(resultBuffer[i] == iotaBuffer[iotaIndex],
-            qPrintable(QString("different at buffer %1 iota %2: %3 != %4 len: %5, actualCopy: %6, iotaStart: %7")
-                .arg(i).arg(iotaIndex).arg(resultBuffer[i]).arg(iotaBuffer[iotaIndex])
-                .arg(len).arg(actualCopy).arg(iotaStart)));
+                 qPrintable(QString("different at buffer %1 iota %2: %3 != %4 len: %5, actualCopy: "
+                                    "%6, iotaStart: %7")
+                                    .arg(i)
+                                    .arg(iotaIndex)
+                                    .arg(resultBuffer[i])
+                                    .arg(iotaBuffer[iotaIndex])
+                                    .arg(len)
+                                    .arg(actualCopy)
+                                    .arg(iotaStart)));
     }
 }
 
-void TestCyclicBuffer::initTestCase() {
+void TestCyclicBuffer::initTestCase()
+{
     std::iota(iotaBuffer, iotaBuffer + 256, 0);
 }
 
-void TestCyclicBuffer::testShortAppend() {
+void TestCyclicBuffer::testShortAppend()
+{
     CyclicBuffer buffer(47);
     buffer.append(iotaBuffer, 30);
 
@@ -36,7 +46,8 @@ void TestCyclicBuffer::testShortAppend() {
     checkLastBytes(buffer, 50, 30, 0);
 }
 
-void TestCyclicBuffer::testShortShortToMedium() {
+void TestCyclicBuffer::testShortShortToMedium()
+{
     CyclicBuffer buffer(47);
     buffer.append(iotaBuffer, 30);
     buffer.append(iotaBuffer + 30, 17);
@@ -48,7 +59,8 @@ void TestCyclicBuffer::testShortShortToMedium() {
     checkLastBytes(buffer, 70, 47, 47 - 47);
 }
 
-void TestCyclicBuffer::testShortShortToMediumThenShort() {
+void TestCyclicBuffer::testShortShortToMediumThenShort()
+{
     CyclicBuffer buffer(47);
     buffer.append(iotaBuffer, 30);
     buffer.append(iotaBuffer + 30, 17);
@@ -61,7 +73,8 @@ void TestCyclicBuffer::testShortShortToMediumThenShort() {
     checkLastBytes(buffer, 60, 47, 60 - 47);
     checkLastBytes(buffer, 70, 47, 60 - 47);
 }
-void TestCyclicBuffer::testShortShortToLong() {
+void TestCyclicBuffer::testShortShortToLong()
+{
     CyclicBuffer buffer(47);
     buffer.append(iotaBuffer, 30);
     buffer.append(iotaBuffer + 30, 20);
@@ -73,7 +86,8 @@ void TestCyclicBuffer::testShortShortToLong() {
     checkLastBytes(buffer, 70, 47, 50 - 47);
 }
 
-void TestCyclicBuffer::testMediumAppend() {
+void TestCyclicBuffer::testMediumAppend()
+{
     CyclicBuffer buffer(47);
     buffer.append(iotaBuffer, 47);
 
@@ -83,7 +97,8 @@ void TestCyclicBuffer::testMediumAppend() {
     checkLastBytes(buffer, 50, 47, 47 - 47);
 }
 
-void TestCyclicBuffer::testLongAppend() {
+void TestCyclicBuffer::testLongAppend()
+{
     CyclicBuffer buffer(47);
     buffer.append(iotaBuffer, 60);
 
@@ -95,7 +110,8 @@ void TestCyclicBuffer::testLongAppend() {
     checkLastBytes(buffer, 70, 47, 60 - 47);
 }
 
-void TestCyclicBuffer::testShortLongAppend() {
+void TestCyclicBuffer::testShortLongAppend()
+{
     CyclicBuffer buffer(47);
     buffer.append(iotaBuffer, 30);
     buffer.append(iotaBuffer + 30, 60);

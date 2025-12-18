@@ -22,10 +22,8 @@
 
 #include "qaboutdlg.h"
 
-
-QAboutDlg::QAboutDlg( QWidget* parent ) : QDialog( parent )
+QAboutDlg::QAboutDlg(QWidget *parent) : QDialog(parent)
 {
     // ** SETUP THE MAIN WINDOW ** //
-    _ab.setupUi( this );
+    _ab.setupUi(this);
 }
-

@@ -2,14 +2,15 @@
 
 #include <QPainter>
 
-FreqDiffView::FreqDiffView(QWidget *parent): QWidget(parent) {
-}
+FreqDiffView::FreqDiffView(QWidget *parent) : QWidget(parent) { }
 
-void FreqDiffView::setEstimatedNote(std::optional<EstimatedNote> estimatedNote) {
+void FreqDiffView::setEstimatedNote(std::optional<EstimatedNote> estimatedNote)
+{
     _estimatedNote = estimatedNote;
 }
 
-void FreqDiffView::paintEvent(QPaintEvent *event) {
+void FreqDiffView::paintEvent(QPaintEvent *event)
+{
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
@@ -45,6 +46,7 @@ void FreqDiffView::paintEvent(QPaintEvent *event) {
     }
 }
 
-QSize FreqDiffView::minimumSizeHint() const {
+QSize FreqDiffView::minimumSizeHint() const
+{
     return QSize(100, 50);
 }

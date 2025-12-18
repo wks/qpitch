@@ -5,7 +5,8 @@
 #include <QWidget>
 #include <QSize>
 
-class FreqDiffView : public QWidget {
+class FreqDiffView : public QWidget
+{
     Q_OBJECT
 public:
     explicit FreqDiffView(QWidget *parent);

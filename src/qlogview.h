@@ -37,7 +37,8 @@
 #include <QWidget>
 #include <QPicture>
 
-class QLogView : public QWidget {
+class QLogView : public QWidget
+{
     Q_OBJECT
 
 public: /* methods */
@@ -45,7 +46,7 @@ public: /* methods */
     /*!
      * \param[in] parent handle to the parent widget
      */
-    QLogView( QWidget* parent = 0 );
+    QLogView(QWidget *parent = 0);
 
     //! Set the TuningParameters object
     void setTuningParameters(std::shared_ptr<TuningParameters> tuningParameters);
@@ -59,30 +60,31 @@ protected: /* methods */
     /*!
      * \param[in] event the details of the repaint event
      */
-    virtual void paintEvent( QPaintEvent* event );
+    virtual void paintEvent(QPaintEvent *event);
 
 private: /* static constants */
     // ** WIDGETS SIZES ** //
-    static const double SIDE_MARGIN;                    //!< Percent width of the horizontal border
-    static const double BAR_HEIGHT;                     //!< Half the height of the tuning bar
-    static const double MINOR_TICK_HEIGHT;              //!< Height of the minor ticks
-    static const double MIDDLE_TICK_HEIGHT;             //!< Height of the middle ticks
-    static const double MAJOR_TICK_HEIGHT;              //!< Height of the major ticks
-    static const double LABEL_OFFSET;                   //!< Distance of the labels from the tuning bar
-    static const double CARET_BORDER;                   //!< Space between the label and the rounded rectangle displayed when the error is below 2.5 percent
-    static const double CURSOR_WIDTH;                   //!< Width of the cursor displayed in the tuning bar
-    static const double CURSOR_HEIGHT;                  //!< Height of the cursor displayed in the tuning bar
-    static const double ACCEPTED_DEVIATION;             //!< Pitch deviation where the cursor becomes a rectangle
-
+    static const double SIDE_MARGIN; //!< Percent width of the horizontal border
+    static const double BAR_HEIGHT; //!< Half the height of the tuning bar
+    static const double MINOR_TICK_HEIGHT; //!< Height of the minor ticks
+    static const double MIDDLE_TICK_HEIGHT; //!< Height of the middle ticks
+    static const double MAJOR_TICK_HEIGHT; //!< Height of the major ticks
+    static const double LABEL_OFFSET; //!< Distance of the labels from the tuning bar
+    static const double
+            CARET_BORDER; //!< Space between the label and the rounded rectangle displayed when the error is below 2.5 percent
+    static const double CURSOR_WIDTH; //!< Width of the cursor displayed in the tuning bar
+    static const double CURSOR_HEIGHT; //!< Height of the cursor displayed in the tuning bar
+    static const double
+            ACCEPTED_DEVIATION; //!< Pitch deviation where the cursor becomes a rectangle
 
 private: /* members */
     // ** PITCH DETECTION PARAMETERS ** //
-    std::shared_ptr<TuningParameters>   _tuningParameters;          //!< Tuning parameters
-    std::optional<EstimatedNote>        _estimatedNote;
+    std::shared_ptr<TuningParameters> _tuningParameters; //!< Tuning parameters
+    std::optional<EstimatedNote> _estimatedNote;
 
     // ** REPAINT FLAG **//
-    bool                _drawBackground;                //!< Redraw everything when true, otherwise redraw only the note scale
-    QPicture            _picture;                       //!< QPicture used to store the background to reduce the load
+    bool _drawBackground; //!< Redraw everything when true, otherwise redraw only the note scale
+    QPicture _picture; //!< QPicture used to store the background to reduce the load
 };
 
 #endif /* __QLOGVIEW_H_ */

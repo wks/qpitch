@@ -1,7 +1,7 @@
 #include <QTest>
 #include <QObject>
 
-class TestCyclicBuffer: public QObject
+class TestCyclicBuffer : public QObject
 {
     Q_OBJECT
 private slots:

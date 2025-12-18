@@ -3,15 +3,15 @@
 #include <cstring>
 #include <QtAssert>
 
-CyclicBuffer::CyclicBuffer(size_t capacity):
-    _capacity(capacity)
+CyclicBuffer::CyclicBuffer(size_t capacity) : _capacity(capacity)
 {
     _cursor = 0;
     _filledOnce = false;
     _buffer.resize(capacity);
 }
 
-void CyclicBuffer::append(const unsigned char *src, size_t len) {
+void CyclicBuffer::append(const unsigned char *src, size_t len)
+{
     if (len >= _capacity) {
         // Too many bytes to append.  Just fill the entire buffer.
         size_t srcOffset = len - _capacity;
@@ -37,7 +37,8 @@ void CyclicBuffer::append(const unsigned char *src, size_t len) {
     }
 }
 
-size_t CyclicBuffer::copyLastBytes(unsigned char *dst, size_t len) const {
+size_t CyclicBuffer::copyLastBytes(unsigned char *dst, size_t len) const
+{
     size_t actualBytes = _filledOnce ? _capacity : _cursor;
     size_t truncatedLen = std::min(len, actualBytes);
 

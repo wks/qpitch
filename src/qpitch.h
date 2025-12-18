@@ -33,7 +33,6 @@
 class QPitchCore;
 class QTimer;
 
-
 //! Main window of the application.
 /*!
  * This class implements the main window of the application.
@@ -41,59 +40,58 @@ class QTimer;
  * simply to display widgets and connect signals.
  */
 
-class QPitch : public QMainWindow {
+class QPitch : public QMainWindow
+{
     Q_OBJECT
-
 
 public: /* methods */
     //! Deafult constructor.
     /*!
      * \param[in] parent handle to the parent widget
      */
-    QPitch( QMainWindow* parent = 0 );
+    QPitch(QMainWindow *parent = 0);
 
     //! Deafult destructor.
-    ~QPitch( );
+    ~QPitch();
 
 protected: /* methods */
     //! Function called when the main window is closed.
     /*!
      * \param[in] event details of the close event
      */
-    virtual void closeEvent( QCloseEvent* event );
+    virtual void closeEvent(QCloseEvent *event);
 
 private: /* static constants */
     // ** BUFFER SIZE ** //
-    static const int    PLOT_BUFFER_SIZE;               //!< Size of the buffers used for visualization
-
+    static const int PLOT_BUFFER_SIZE; //!< Size of the buffers used for visualization
 
 private: /* members */
     // ** Configurations ** //
     QPitchSettings _settings;
-    std::shared_ptr<TuningParameters>   _tuningParameters;
+    std::shared_ptr<TuningParameters> _tuningParameters;
 
     // ** Qt WIDGETS ** //
-    Ui::QPitch      _gt;                            //!< Mainwindow created with Qt-Designer
-    QPitchCore*     _hQPitchCore;                   //!< Handle to the working thread
+    Ui::QPitch _gt; //!< Mainwindow created with Qt-Designer
+    QPitchCore *_hQPitchCore; //!< Handle to the working thread
 
     // ** STATUS BAR ITEMS ** //
-    QLabel              _sb_labelDeviceInfo;            //!< Label with the device information
+    QLabel _sb_labelDeviceInfo; //!< Label with the device information
 
     // ** PITCH ESTIMATION ** //
     std::optional<EstimatedNote> _estimatedNote;
 
 private slots:
     //! Open a dialog to configure the application settings.
-    void showPreferencesDialog( );
+    void showPreferencesDialog();
 
     //! Open the about dialog.
-    void showAboutDialog( );
+    void showAboutDialog();
 
     //! Update the application settings.
     void setApplicationSettings();
 
     //! Update all the elements in the GUI.
-    void updateQPitchGui( );
+    void updateQPitchGui();
 
     //! Handle updated VisualizationData
     void onVisualizationDataUpdated(VisualizationData *visData);

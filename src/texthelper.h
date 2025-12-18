@@ -3,7 +3,8 @@
 #include <QPainter>
 #include <QFont>
 
-class TextHelper {
+class TextHelper
+{
 public:
     TextHelper(QPainter &painter);
 

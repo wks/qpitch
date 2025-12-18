@@ -31,24 +31,24 @@
 #include <QTimer>
 
 // ** CONSTANTS ** //
-const int QPitch::PLOT_BUFFER_SIZE = 551;       // 44100 * 0.05 / 4 = 551.25
-                                                    // size computed to have a time range of 50 ms with an integer downsample ratio
-                                                    // sample rate = 44100 Hz --> downsample ratio = 4
-                                                    // sample rate = 22050 Hz --> downsample ratio = 2
+const int QPitch::PLOT_BUFFER_SIZE = 551; // 44100 * 0.05 / 4 = 551.25
+// size computed to have a time range of 50 ms with an integer downsample ratio
+// sample rate = 44100 Hz --> downsample ratio = 4
+// sample rate = 22050 Hz --> downsample ratio = 2
 
-
-QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
+QPitch::QPitch(QMainWindow *parent) : QMainWindow(parent)
 {
     // ** SETUP THE MAIN WINDOW ** //
-    _gt.setupUi( this );
+    _gt.setupUi(this);
 
     _settings.load();
 
     // ** INITIALIZE TUNING PARAMETERS ** //
-    _tuningParameters = std::make_shared<TuningParameters>(_settings.fundamentalFrequency, _settings.tuningNotation);
+    _tuningParameters = std::make_shared<TuningParameters>(_settings.fundamentalFrequency,
+                                                           _settings.tuningNotation);
 
     // ** INTIALIZE QPITCH CORE ** //
-    QPitchCoreOptions pitchCoreOptions {
+    QPitchCoreOptions pitchCoreOptions{
         .sampleFrequency = _settings.sampleFrequency,
         .fftFrameSize = _settings.fftFrameSize,
         .tuningParameters = *_tuningParameters,
@@ -56,8 +56,8 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 
     try {
         _hQPitchCore = new QPitchCore(this, PLOT_BUFFER_SIZE, std::move(pitchCoreOptions));
-    } catch ( QPaSoundInputException& e ) {
-        e.report( );
+    } catch (QPaSoundInputException &e) {
+        e.report();
     }
 
     // ** INITIALIZE CUSTOM WIDGETS ** //
@@ -74,7 +74,8 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
     _gt.widget_plotSpectrum->setTitle("Frequency Spectrum [Hz]");
     _gt.widget_plotSpectrum->setScaleKind(PlotView::ScaleKind::Linear);
     _gt.widget_plotSpectrum->setLinePen(QPen(Qt::GlobalColor::darkCyan, 1.0));
-    _gt.widget_plotSpectrum->setMarkerPen(QPen(Qt::GlobalColor::darkYellow, 1.0, Qt::PenStyle::DotLine));
+    _gt.widget_plotSpectrum->setMarkerPen(
+            QPen(Qt::GlobalColor::darkYellow, 1.0, Qt::PenStyle::DotLine));
 
     // The autocorrelation of the input signal is plotted in the lower axis. The x-axis has the same
     // scale as the input signal in the time domain. The peak of the autocorrelation used to detect
@@ -89,43 +90,39 @@ QPitch::QPitch( QMainWindow* parent ) : QMainWindow( parent )
 
     // ** SETUP THE CONNECTIONS ** //
     // File menu
-    connect( _gt.action_preferences, &QAction::triggered,
-        this, &QPitch::showPreferencesDialog);
+    connect(_gt.action_preferences, &QAction::triggered, this, &QPitch::showPreferencesDialog);
 
     // Help menu
-    connect( _gt.action_about, &QAction::triggered,
-        this, &QPitch::showAboutDialog);
-    connect( _gt.action_aboutQt, &QAction::triggered,
-        qApp, &QApplication::aboutQt);
+    connect(_gt.action_about, &QAction::triggered, this, &QPitch::showAboutDialog);
+    connect(_gt.action_aboutQt, &QAction::triggered, qApp, &QApplication::aboutQt);
 
     // Internal connections
-    connect( _hQPitchCore, &QPitchCore::visualizationDataUpdated,
-        this, &QPitch::onVisualizationDataUpdated);
+    connect(_hQPitchCore, &QPitchCore::visualizationDataUpdated, this,
+            &QPitch::onVisualizationDataUpdated);
 
-    connect( _hQPitchCore, &QPitchCore::portAudioStreamStarted,
-        this, &QPitch::onPortAudioStreamStarted);
+    connect(_hQPitchCore, &QPitchCore::portAudioStreamStarted, this,
+            &QPitch::onPortAudioStreamStarted);
 
     // ** START THE QPITCH CORE THREAD ** //
-    Q_ASSERT( _hQPitchCore != nullptr );
+    Q_ASSERT(_hQPitchCore != nullptr);
     _hQPitchCore->start();
 
     // ** REMOVE MAXIMIZE BUTTON ** //
-    Qt::WindowFlags flags = windowFlags( );
+    Qt::WindowFlags flags = windowFlags();
     flags &= ~Qt::WindowMaximizeButtonHint;
-    setWindowFlags( flags );
+    setWindowFlags(flags);
 }
 
-
-QPitch::~QPitch( )
+QPitch::~QPitch()
 {
     // ** ENSURE THAT THE DATA ARE VALID ** //
-    Q_ASSERT( _hQPitchCore  != nullptr );
+    Q_ASSERT(_hQPitchCore != nullptr);
 }
 
-void QPitch::closeEvent( QCloseEvent* /* event */ )
+void QPitch::closeEvent(QCloseEvent * /* event */)
 {
     // ** ENSURE THAT THE DATA ARE VALID ** //
-    Q_ASSERT( _hQPitchCore  != nullptr );
+    Q_ASSERT(_hQPitchCore != nullptr);
 
     _settings.store();
 
@@ -133,14 +130,13 @@ void QPitch::closeEvent( QCloseEvent* /* event */ )
     _hQPitchCore->requestStop();
 }
 
-
-void QPitch::showPreferencesDialog( )
+void QPitch::showPreferencesDialog()
 {
     // ** ENSURE THAT THE DATA ARE VALID ** //
-    Q_ASSERT( _hQPitchCore  != nullptr );
+    Q_ASSERT(_hQPitchCore != nullptr);
 
     // ** SHOW PREFERENCES DIALOG ** //
-    QSettingsDlg as( _settings, this );
+    QSettingsDlg as(_settings, this);
 
     int execResult = as.exec();
 
@@ -153,10 +149,10 @@ void QPitch::showPreferencesDialog( )
 void QPitch::setApplicationSettings()
 {
     // ** UPDATE NOTE SCALE ** //
-    _tuningParameters->setParameters(_settings.fundamentalFrequency, _settings.tuningNotation );
+    _tuningParameters->setParameters(_settings.fundamentalFrequency, _settings.tuningNotation);
 
     // ** INTIALIZE QPITCH CORE ** //
-    QPitchCoreOptions pitchCoreOptions {
+    QPitchCoreOptions pitchCoreOptions{
         .sampleFrequency = _settings.sampleFrequency,
         .fftFrameSize = _settings.fftFrameSize,
         .tuningParameters = *_tuningParameters,
@@ -165,17 +161,14 @@ void QPitch::setApplicationSettings()
     _hQPitchCore->setOptions(std::move(pitchCoreOptions));
 }
 
-
-
-void QPitch::showAboutDialog( )
+void QPitch::showAboutDialog()
 {
     // ** SHOW ABOUT DIALOG ** //
-    QAboutDlg ab( this );
-    ab.exec( );
+    QAboutDlg ab(this);
+    ab.exec();
 }
 
-
-void QPitch::updateQPitchGui( )
+void QPitch::updateQPitchGui()
 {
     static FPSProfiler fp("updateQPitchGui");
     fp.tick();
@@ -184,26 +177,28 @@ void QPitch::updateQPitchGui( )
     _gt.widget_plotSamples->update();
     _gt.widget_plotSpectrum->update();
     _gt.widget_plotAutoCorr->update();
-    _gt.widget_qlogview->update( );
+    _gt.widget_qlogview->update();
     _gt.widget_freqDiff->update();
 
     // ** UPDATE LABELS ** //
     if (_estimatedNote) {
         const EstimatedNote &estimatedNote = _estimatedNote.value();
-        _gt.lineEdit_note->setText( QString( "%1 Hz" ).arg( estimatedNote.noteFrequency, 0, 'f', 2 ) );
-        _gt.lineEdit_frequency->setText( QString( "%1 Hz" ).arg( estimatedNote.estimatedFrequency, 0, 'f', 2 ) );
+        _gt.lineEdit_note->setText(QString("%1 Hz").arg(estimatedNote.noteFrequency, 0, 'f', 2));
+        _gt.lineEdit_frequency->setText(
+                QString("%1 Hz").arg(estimatedNote.estimatedFrequency, 0, 'f', 2));
         _gt.lineEdit_cents->setText(QString("%1").arg(estimatedNote.currentPitchDeviation * 100.0));
     } else {
         // if frequencies are out of range clear widgets
-        _gt.lineEdit_note->clear( );
-        _gt.lineEdit_frequency->clear( );
+        _gt.lineEdit_note->clear();
+        _gt.lineEdit_frequency->clear();
         _gt.lineEdit_cents->clear();
     }
 
     _gt.lineEdit_fps->setText(QString("%1").arg(fp.get_fps()));
 }
 
-void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
+void QPitch::onVisualizationDataUpdated(VisualizationData *visData)
+{
     {
         QMutexLocker visDataLocker(&visData->mutex);
 
@@ -214,7 +209,8 @@ void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
         _gt.widget_plotSpectrum->setMarker(visData->estimatedFrequency);
         _gt.widget_plotAutoCorr->setData(visData->plotAutoCorr);
         _gt.widget_plotAutoCorr->setScaleRange(visData->plotAutoCorrRange);
-        double estimatedPeriod = 1000.0 / visData->estimatedFrequency; // Period of the detected frequency, in milliseconds.
+        double estimatedPeriod = 1000.0
+                / visData->estimatedFrequency; // Period of the detected frequency, in milliseconds.
         _gt.widget_plotAutoCorr->setMarker(estimatedPeriod);
 
         _gt.widget_qlogview->setEstimatedNote(visData->estimatedNote);
@@ -224,10 +220,11 @@ void QPitch::onVisualizationDataUpdated(VisualizationData *visData) {
     updateQPitchGui();
 }
 
-void QPitch::onPortAudioStreamStarted(QString device, QString hostApi) {
+void QPitch::onPortAudioStreamStarted(QString device, QString hostApi)
+{
     // ** SETUP THE STATUS BAR ** //
     QString msg = QString("Device: %1, Host API: %2").arg(device).arg(hostApi);
-    _sb_labelDeviceInfo.setText( msg );
-    _sb_labelDeviceInfo.setIndent( 10 );
-    _gt.statusbar->addWidget( &_sb_labelDeviceInfo, 1 );
+    _sb_labelDeviceInfo.setText(msg);
+    _sb_labelDeviceInfo.setIndent(10);
+    _gt.statusbar->addWidget(&_sb_labelDeviceInfo, 1);
 }

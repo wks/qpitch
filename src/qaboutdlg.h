@@ -32,8 +32,8 @@
 
 #include "ui_qaboutdlg.h"
 
-
-class QAboutDlg : public QDialog {
+class QAboutDlg : public QDialog
+{
     Q_OBJECT
 
 public:
@@ -41,12 +41,11 @@ public:
     /*!
      * \param[in] parent handle to the parent widget
      */
-    QAboutDlg( QWidget* parent = 0 );
+    QAboutDlg(QWidget *parent = 0);
 
 private:
     // ** Qt WIDGETS ** //
-    Ui::QAboutDlg       _ab;                            //!< Dialog created with Qt-Designer
+    Ui::QAboutDlg _ab; //!< Dialog created with Qt-Designer
 };
 
 #endif /* __QABOUTDLG_H_ */
-

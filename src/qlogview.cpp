@@ -20,7 +20,6 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-
 #include "qlogview.h"
 
 #include "fpsprofiler.h"
@@ -32,26 +31,23 @@
 #include <QPainterPath>
 
 // ** WIDGET SIZES ** //
-const double    QLogView::SIDE_MARGIN           = 0.02;
-const double    QLogView::BAR_HEIGHT            = 8.0;
-const double    QLogView::MINOR_TICK_HEIGHT     = 3.0;
-const double    QLogView::MIDDLE_TICK_HEIGHT    = 5.0;
-const double    QLogView::MAJOR_TICK_HEIGHT     = 7.0;
-const double    QLogView::LABEL_OFFSET          = 12.0;
-const double    QLogView::CARET_BORDER          = 5.0;
-const double    QLogView::CURSOR_WIDTH          = 6.0;
-const double    QLogView::CURSOR_HEIGHT         = QLogView::BAR_HEIGHT - 1.0;
-const double    QLogView::ACCEPTED_DEVIATION    = 0.025;
+const double QLogView::SIDE_MARGIN = 0.02;
+const double QLogView::BAR_HEIGHT = 8.0;
+const double QLogView::MINOR_TICK_HEIGHT = 3.0;
+const double QLogView::MIDDLE_TICK_HEIGHT = 5.0;
+const double QLogView::MAJOR_TICK_HEIGHT = 7.0;
+const double QLogView::LABEL_OFFSET = 12.0;
+const double QLogView::CARET_BORDER = 5.0;
+const double QLogView::CURSOR_WIDTH = 6.0;
+const double QLogView::CURSOR_HEIGHT = QLogView::BAR_HEIGHT - 1.0;
+const double QLogView::ACCEPTED_DEVIATION = 0.025;
 
-QLogView::QLogView( QWidget* parent ) : QWidget( parent )
-{
-}
-
+QLogView::QLogView(QWidget *parent) : QWidget(parent) { }
 
 void QLogView::setTuningParameters(std::shared_ptr<TuningParameters> tuningParameters)
 {
     _tuningParameters = tuningParameters;
-    update( );
+    update();
 }
 
 void QLogView::setEstimatedNote(std::optional<EstimatedNote> estimatedNote)
@@ -59,16 +55,16 @@ void QLogView::setEstimatedNote(std::optional<EstimatedNote> estimatedNote)
     _estimatedNote = estimatedNote;
 }
 
-void QLogView::paintEvent( QPaintEvent* /* event */ )
+void QLogView::paintEvent(QPaintEvent * /* event */)
 {
     Q_ASSERT(_tuningParameters);
 
     // ** INITIALIZE PAINTER ** //
-    QPainter    painter;
+    QPainter painter;
 
     // setup the painter
     painter.begin(this);
-    painter.setRenderHint( QPainter::Antialiasing );
+    painter.setRenderHint(QPainter::Antialiasing);
 
     // ** Prepare some common properties. ** //
 
@@ -91,20 +87,20 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
     painter.drawRect(barRect);
 
     // plot ticks
-    for ( unsigned int k = 0 ; k <= 120 ; ++k ) {
+    for (unsigned int k = 0; k <= 120; ++k) {
         double xTick = scaleWidth / 120.0 * k;
         double tickHeight;
 
         if ((k + 5) % 10 == 0) {
             tickHeight = MAJOR_TICK_HEIGHT;
-        } else if ((k + 5) % 5== 0) {
+        } else if ((k + 5) % 5 == 0) {
             tickHeight = MIDDLE_TICK_HEIGHT;
         } else {
             tickHeight = MINOR_TICK_HEIGHT;
         }
 
-        painter.drawLine( xTick, -BAR_HEIGHT, xTick, -BAR_HEIGHT - tickHeight );    // upper tick
-        painter.drawLine( xTick,  BAR_HEIGHT, xTick,  BAR_HEIGHT + tickHeight );    // lower tick
+        painter.drawLine(xTick, -BAR_HEIGHT, xTick, -BAR_HEIGHT - tickHeight); // upper tick
+        painter.drawLine(xTick, BAR_HEIGHT, xTick, BAR_HEIGHT + tickHeight); // lower tick
     }
 
     // ** DISPLAY THE NOTE LABELS ** //
@@ -123,11 +119,12 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
     // and ensure it contrasts well with both palette().base() and palette().windowText().
     QPen penActiveLabel(QColorConstants::Red);
 
-    for ( unsigned int k = 0 ; k < 12 ; ++k ) {
+    for (unsigned int k = 0; k < 12; ++k) {
         double xTick = scaleWidth / 24.0 + scaleWidth / 12.0 * k;
         const QString &labelAbove = _tuningParameters->getNoteLabel(k, false);
         const QString &labelBelow = _tuningParameters->getNoteLabel(k, true);
-        painter.setPen(_estimatedNote && k == _estimatedNote->currentPitch ? penActiveLabel : penLabel);
+        painter.setPen(_estimatedNote && k == _estimatedNote->currentPitch ? penActiveLabel
+                                                                           : penLabel);
         // label above the bar
         textHelper.drawTextCenteredUp(QPointF(xTick, -BAR_HEIGHT - LABEL_OFFSET), labelAbove);
         // label below the bar
@@ -136,37 +133,42 @@ void QLogView::paintEvent( QPaintEvent* /* event */ )
 
     // ** DRAW THE CURSOR IF REQUIRED ** //
 
-    if ( _estimatedNote ) {
-        const EstimatedNote& estimatedNote = _estimatedNote.value();
+    if (_estimatedNote) {
+        const EstimatedNote &estimatedNote = _estimatedNote.value();
 
         // draw the cursor
-        painter.setPen( QPen( palette( ).text( ), 1.0, Qt::SolidLine ) );
-        double xCursor = scaleWidth / 24.0 + scaleWidth / 12.0 * ( estimatedNote.currentPitch + estimatedNote.currentPitchDeviation );
+        painter.setPen(QPen(palette().text(), 1.0, Qt::SolidLine));
+        double xCursor = scaleWidth / 24.0
+                + scaleWidth / 12.0
+                        * (estimatedNote.currentPitch + estimatedNote.currentPitchDeviation);
         // TODO: Make sure this color contrasts well against palette().base()
-        QColor cursorColor( (int)(0xAA + 0x55 * (1.0 - 2.0 * fabs(estimatedNote.currentPitchDeviation))), 0x00, 0x00 );
+        QColor cursorColor(
+                (int)(0xAA + 0x55 * (1.0 - 2.0 * fabs(estimatedNote.currentPitchDeviation))), 0x00,
+                0x00);
         painter.setBrush(cursorColor);
 
         double cursorHeight = BAR_HEIGHT - 1;
 
-        if ( estimatedNote.currentPitchDeviation < -ACCEPTED_DEVIATION ) {
+        if (estimatedNote.currentPitchDeviation < -ACCEPTED_DEVIATION) {
             // draw a right arrow if the pitch is lower than the reference
             QPolygonF rightArrow;
-            rightArrow << QPointF( xCursor - CURSOR_WIDTH / 2, -CURSOR_HEIGHT)
-                << QPointF( xCursor - CURSOR_WIDTH / 2, BAR_HEIGHT)
-                << QPointF( xCursor + CURSOR_WIDTH / 2, 0)
-                << QPointF( xCursor - CURSOR_WIDTH / 2, -CURSOR_HEIGHT);
+            rightArrow << QPointF(xCursor - CURSOR_WIDTH / 2, -CURSOR_HEIGHT)
+                       << QPointF(xCursor - CURSOR_WIDTH / 2, BAR_HEIGHT)
+                       << QPointF(xCursor + CURSOR_WIDTH / 2, 0)
+                       << QPointF(xCursor - CURSOR_WIDTH / 2, -CURSOR_HEIGHT);
             painter.drawPolygon(rightArrow);
-        } else if ( estimatedNote.currentPitchDeviation > ACCEPTED_DEVIATION ) {
+        } else if (estimatedNote.currentPitchDeviation > ACCEPTED_DEVIATION) {
             // draw a left arrow if the pitch is higher than the reference
             QPolygonF leftArrow;
-            leftArrow << QPointF( xCursor + CURSOR_WIDTH / 2, -CURSOR_HEIGHT)
-                << QPointF( xCursor + CURSOR_WIDTH / 2, BAR_HEIGHT)
-                << QPointF( xCursor - CURSOR_WIDTH / 2, 0)
-                << QPointF( xCursor + CURSOR_WIDTH / 2, -CURSOR_HEIGHT);
+            leftArrow << QPointF(xCursor + CURSOR_WIDTH / 2, -CURSOR_HEIGHT)
+                      << QPointF(xCursor + CURSOR_WIDTH / 2, BAR_HEIGHT)
+                      << QPointF(xCursor - CURSOR_WIDTH / 2, 0)
+                      << QPointF(xCursor + CURSOR_WIDTH / 2, -CURSOR_HEIGHT);
             painter.drawPolygon(leftArrow);
         } else {
             // draw a rectangular cursor
-            painter.drawRect(QRectF(QPointF(xCursor - CURSOR_WIDTH / 2, -CURSOR_HEIGHT), QSizeF(CURSOR_WIDTH, 2 * CURSOR_HEIGHT)));
+            painter.drawRect(QRectF(QPointF(xCursor - CURSOR_WIDTH / 2, -CURSOR_HEIGHT),
+                                    QSizeF(CURSOR_WIDTH, 2 * CURSOR_HEIGHT)));
             painter.drawLine(QPointF(xCursor, -CURSOR_HEIGHT), QPointF(xCursor, CURSOR_HEIGHT));
         }
     }
