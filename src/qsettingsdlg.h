@@ -20,8 +20,7 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef __QAUDIOSETTINGS_H_
-#define __QAUDIOSETTINGS_H_
+#pragma once
 
 #include "ui_qsettingsdlg.h"
 #include "qpitchsettings.h"
@@ -71,5 +70,3 @@ private: /* members */
     void load(const QPitchSettings &settings); //!< Load widget contents
     void dump(QPitchSettings &settings); //!< Dump widget contents
 };
-
-#endif /* __QSETTINGSDLG_H_ */

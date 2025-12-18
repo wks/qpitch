@@ -20,8 +20,7 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef __QPITCH_H_
-#define __QPITCH_H_
+#pragma once
 
 #include "ui_qpitch.h"
 #include "qpitchsettings.h"
@@ -99,5 +98,3 @@ private slots:
     //! Called when the PortAudio stream is started.
     void onPortAudioStreamStarted(QString device, QString hostApi);
 };
-
-#endif /* __QPITCH_H_ */

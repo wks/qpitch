@@ -29,8 +29,7 @@
  * is drawn around the note label.
  */
 
-#ifndef __QLOGVIEW_H_
-#define __QLOGVIEW_H_
+#pragma once
 
 #include "notes.h"
 
@@ -86,5 +85,3 @@ private: /* members */
     bool _drawBackground; //!< Redraw everything when true, otherwise redraw only the note scale
     QPicture _picture; //!< QPicture used to store the background to reduce the load
 };
-
-#endif /* __QLOGVIEW_H_ */

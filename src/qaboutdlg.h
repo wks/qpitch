@@ -27,8 +27,7 @@
  * its authors.
  */
 
-#ifndef __QABOUTDLG_H_
-#define __QABOUTDLG_H_
+#pragma once
 
 #include "ui_qaboutdlg.h"
 
@@ -47,5 +46,3 @@ private:
     // ** Qt WIDGETS ** //
     Ui::QAboutDlg _ab; //!< Dialog created with Qt-Designer
 };
-
-#endif /* __QABOUTDLG_H_ */

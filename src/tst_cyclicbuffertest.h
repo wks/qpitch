@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QTest>
 #include <QObject>
 
