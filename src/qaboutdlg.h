@@ -20,29 +20,27 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-//! About dialog to show application details
-/*!
- * This class implements a simple dialog to display a brief
- * description of the application and some information about
- * its authors.
- */
-
 #pragma once
 
 #include "ui_qaboutdlg.h"
 
+/// About dialog to show application details
+///
+/// This class implements a simple dialog to display a brief description of the application and some
+/// information about its authors.
 class QAboutDlg : public QDialog
 {
     Q_OBJECT
 
 public:
-    //! Deafult constructor.
-    /*!
-     * \param[in] parent handle to the parent widget
-     */
+    /// Deafult constructor.
+    ///
+    /// \param[in] parent handle to the parent widget
     QAboutDlg(QWidget *parent = 0);
 
 private:
     // ** Qt WIDGETS ** //
-    Ui::QAboutDlg _ab; //!< Dialog created with Qt-Designer
+
+    /// Dialog created with Qt-Designer
+    Ui::QAboutDlg _ab;
 };

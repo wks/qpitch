@@ -20,15 +20,6 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-//! Note scale visualization.
-/*!
- * A linear note scale is displayed using the chosen musical
- * notation. A moving cursor gives a rough indication of the
- * detected note. The identified note is highlighted and
- * when the pitch deviation is smaller than 2.5% a red square
- * is drawn around the note label.
- */
-
 #pragma once
 
 #include "notes.h"
@@ -36,52 +27,79 @@
 #include <QWidget>
 #include <QPicture>
 
+/// Note scale visualization.
+///
+/// A linear note scale is displayed using the chosen musical notation. A moving cursor gives a
+/// rough indication of the detected note. The identified note is highlighted and when the pitch
+/// deviation is smaller than 2.5% a red square is drawn around the note label.
 class QLogView : public QWidget
 {
     Q_OBJECT
 
 public: /* methods */
-    //! Default constructor.
-    /*!
-     * \param[in] parent handle to the parent widget
-     */
+    /// Default constructor.
+    ///
+    /// \param[in] parent handle to the parent widget
     QLogView(QWidget *parent = 0);
 
-    //! Set the TuningParameters object
+    /// Set the TuningParameters object
     void setTuningParameters(std::shared_ptr<TuningParameters> tuningParameters);
 
 public slots:
-    //! Set the estimated note.
+    /// Set the estimated note.
     void setEstimatedNote(std::optional<EstimatedNote> estimatedNote);
 
 protected: /* methods */
-    //! Function called to handle a repaint request.
-    /*!
-     * \param[in] event the details of the repaint event
-     */
+    /// Function called to handle a repaint request.
+    ///
+    /// \param[in] event the details of the repaint event
     virtual void paintEvent(QPaintEvent *event);
 
 private: /* static constants */
     // ** WIDGETS SIZES ** //
-    static const double SIDE_MARGIN; //!< Percent width of the horizontal border
-    static const double BAR_HEIGHT; //!< Half the height of the tuning bar
-    static const double MINOR_TICK_HEIGHT; //!< Height of the minor ticks
-    static const double MIDDLE_TICK_HEIGHT; //!< Height of the middle ticks
-    static const double MAJOR_TICK_HEIGHT; //!< Height of the major ticks
-    static const double LABEL_OFFSET; //!< Distance of the labels from the tuning bar
-    static const double
-            CARET_BORDER; //!< Space between the label and the rounded rectangle displayed when the error is below 2.5 percent
-    static const double CURSOR_WIDTH; //!< Width of the cursor displayed in the tuning bar
-    static const double CURSOR_HEIGHT; //!< Height of the cursor displayed in the tuning bar
-    static const double
-            ACCEPTED_DEVIATION; //!< Pitch deviation where the cursor becomes a rectangle
+    /// Percent width of the horizontal border
+    static const double SIDE_MARGIN;
+
+    /// Half the height of the tuning bar
+    static const double BAR_HEIGHT;
+
+    /// Height of the minor ticks
+    static const double MINOR_TICK_HEIGHT;
+
+    /// Height of the middle ticks
+    static const double MIDDLE_TICK_HEIGHT;
+
+    /// Height of the major ticks
+    static const double MAJOR_TICK_HEIGHT;
+
+    /// Distance of the labels from the tuning bar
+    static const double LABEL_OFFSET;
+
+    /// Space between the label and the rounded rectangle displayed when the error is below 2.5 percent
+    /// Width of the cursor displayed in the tuning bar
+    static const double CARET_BORDER;
+
+    static const double CURSOR_WIDTH;
+
+    /// Height of the cursor displayed in the tuning bar
+    static const double CURSOR_HEIGHT;
+
+    /// Pitch deviation where the cursor becomes a rectangle
+    static const double ACCEPTED_DEVIATION;
 
 private: /* members */
     // ** PITCH DETECTION PARAMETERS ** //
-    std::shared_ptr<TuningParameters> _tuningParameters; //!< Tuning parameters
+
+    /// Tuning parameters
+    std::shared_ptr<TuningParameters> _tuningParameters;
+
     std::optional<EstimatedNote> _estimatedNote;
 
     // ** REPAINT FLAG **//
-    bool _drawBackground; //!< Redraw everything when true, otherwise redraw only the note scale
-    QPicture _picture; //!< QPicture used to store the background to reduce the load
+
+    /// Redraw everything when true, otherwise redraw only the note scale
+    bool _drawBackground;
+
+    /// QPicture used to store the background to reduce the load
+    QPicture _picture;
 };

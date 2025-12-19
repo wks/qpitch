@@ -6,8 +6,8 @@
 class PitchDetectionContext
 {
 public: // ** CONSTANTS ** //
-    static const int
-            ZERO_PADDING_FACTOR; //!< Number of times that the FFT is zero-padded to increase frequency resolution
+    /// Number of times that the FFT is zero-padded to increase frequency resolution
+    static const int ZERO_PADDING_FACTOR;
 
 public: // ** PUBLIC METHODS ** //
     PitchDetectionContext(uint32_t sampleFrequency, size_t fftFrameSize);
@@ -22,29 +22,43 @@ public: // ** PUBLIC METHODS ** //
     fftw_complex *getFreq2Buffer();
     double *getAutoCorrBuffer();
 
-    //! Estimate the pitch of the input signal finding the first peak of the autocorrelation.
-    /*!
-     * \return the frequency value corresponding to the maximum of the autocorrelation
-     */
+    /// Estimate the pitch of the input signal finding the first peak of the autocorrlation.
+    ///
+    /// \return the frequency value corresponding to the maximum of the autocorrelation
     double runPitchDetectionAlgorithm();
 
-    //! Generate a Hanning window.
+    /// Generate a Hanning window.
     static void generateHanningWindow(double *buffer, size_t size);
 
 private:
     // ** PITCH DETECTION PARAMETERS ** //
-    double _sampleFrequency; //!< PortAudio stream
+
+    /// PortAudio stream
+    double _sampleFrequency;
 
     // ** FFTW STRUCTURES ** //
-    fftw_plan _fftwPlanFFT; //!< Plan to compute the FFT of a given signal
-    fftw_plan
-            _fftwPlanIFFT; //!< Plan to compute the IFFT of a given signal (with additional zero-padding
-    size_t _fftFrameSize; //!< Number of frames in the time-domain input
-    double *_window; //!< The window to apply to the input signal
-    double *_fftwInTime; //!< External buffer used to store the input signal in the time domain
-    fftw_complex
-            *_fftwMidFreq; //!< Buffer used to store the intermediate signal in the frequency domain
-    fftw_complex *
-            _fftwMidFreq2; //!< Buffer used to store the intermediate signal in the frequency domain for auto-correlation
-    double *_fftwOutTimeAutocorr; //!< Buffer used to store the output signal in the time domain for the auto-correlation
+
+    /// Plan to compute the FFT of a given signal
+    fftw_plan _fftwPlanFFT;
+
+    /// Plan to compute the IFFT of a given signal (with additional zero-padding
+    fftw_plan _fftwPlanIFFT;
+
+    /// Number of frames in the time-domain input
+    size_t _fftFrameSize;
+
+    /// The window to apply to the input signal
+    double *_window;
+
+    /// External buffer used to store the input signal in the time domain
+    double *_fftwInTime;
+
+    /// Buffer used to store the intermediate signal in the frequency domain
+    fftw_complex *_fftwMidFreq;
+
+    /// Buffer used to store the intermediate signal in the frequency domain for auto-correlation
+    fftw_complex *_fftwMidFreq2;
+
+    /// Buffer used to store the output signal in the time domain for the auto-correlation
+    double *_fftwOutTimeAutocorr;
 };

@@ -29,7 +29,8 @@
 #include "qpitchannotations.h"
 #include "fpsprofiler.h"
 
-//! Definition used to feed the application with a reference squarewave
+/// Definition used to feed the application with a reference squarewave
+/// TODO: This needs to be reimplemented.
 //#define _REFERENCE_SQUAREWAVE_INPUT
 
 #include <cstring>
@@ -44,18 +45,17 @@
 #include <QMutexLocker>
 #include <QWaitCondition>
 
-//! An exception thrown when a PortAudio error occurs
+/// An exception thrown when a PortAudio error occurs
 class QPaSoundInputException : public std::runtime_error
 {
 
 public: /* methods */
-    //! Default constructor.
-    /*!
-     * \param[in] msg the error message to display
-     */
+    /// Default constructor.
+    ///
+    /// \param[in] msg the error message to display
     QPaSoundInputException(const std::string &msg) : std::runtime_error(msg) { return; };
 
-    //! Report exception.
+    /// Report exception.
     void report()
     {
         QMessageBox::critical(nullptr, "QPitch", QString("PortAudio error: %1.").arg(this->what()));
@@ -63,14 +63,13 @@ public: /* methods */
     };
 };
 
-//! Options for the QPitchCore thread.
-/*!
- * This contains options that are settable by the UI.  The acutal QPitchCore thread may keep a
- * private copy of this in order to work safely concurrently.
- *
- * Some fields may mirror that of QPitchSettings, while others can be run-time options such as
- * the selected device (to be added).
- */
+/// Options for the QPitchCore thread.
+///
+/// This contains options that are settable by the UI.  The acutal QPitchCore thread may keep a
+/// private copy of this in order to work safely concurrently.
+///
+/// Some fields may mirror that of QPitchSettings, while others can be run-time options such as the
+/// selected device (to be added).
 struct QPitchCoreOptions
 {
     uint32_t sampleFrequency;
@@ -78,36 +77,32 @@ struct QPitchCoreOptions
     TuningParameters tuningParameters;
 };
 
-// Private implementation.  Not visible from outside.
+/// Private implementation.  Not visible from outside.
 class QPitchCorePrivate;
 
-//! Working thread for the QPitch application.
-/*!
- * This class implements the main working thread for the QPitch
- * application.
- * The audio stream is acquired through the PortAudio library
- * (cross-platform) using a callback function. The size of the internal
- * buffer is set to the size suggested for robust non-interactive
- * application, since the latency is not an issue in this application.
- * In the current version the default audio input stream is used,
- * thus the selection of the audio input is performed using the control
- * panel of the operating system.
- * The pitch detection algorithm is based on the identification of the
- * first peak in the autocorrelation of the signal, which is computed
- * as the inverse FFT of the power spectral density of the signal
- * (the squared module of the signal FFT). The FFT is computed using
- * the FFTW3 library and prior to the inverse transform the signal is
- * zero-padded to increase the resolution of the autocorrelation in
- * order to have a better frequency identification.
- */
+/// Working thread for the QPitch application.
+///
+/// This class implements the main working thread for the QPitch application.
+///
+/// The audio stream is acquired through the PortAudio library (cross-platform) using a callback
+/// function. The size of the internal buffer is set to the size suggested for robust
+/// non-interactive application, since the latency is not an issue in this application. In the
+/// current version the default audio input stream is used, thus the selection of the audio input is
+/// performed using the control panel of the operating system.
+///
+/// The pitch detection algorithm is based on the identification of the first peak in the
+/// autocorrelation of the signal, which is computed as the inverse FFT of the power spectral
+/// density of the signal (the squared module of the signal FFT). The FFT is computed using the
+/// FFTW3 library and prior to the inverse transform the signal is zero-padded to increase the
+/// resolution of the autocorrelation in order to have a better frequency identification.
 class QPitchCore : public QThread
 {
     Q_OBJECT
 
 #ifdef _REFERENCE_SQUAREWAVE_INPUT
 public: /* members */
-    short int _referenceSineWave[4410]; //!< Artificial sine-wave used for debug
-    unsigned int _referenceSineWave_index; //!< Index incremented after each step to simulate time
+    short int _referenceSineWave[4410]; /// Artificial sine-wave used for debug
+    unsigned int _referenceSineWave_index; /// Index incremented after each step to simulate time
 #endif
 
 private: /* sample format related */
@@ -115,38 +110,37 @@ private: /* sample format related */
     const PaSampleFormat PA_SAMPLE_FORMAT = paFloat32;
 
 public: /* methods */
-    //! Default constructor.
-    /*!
-     * \param[in] plotPlot_size the number of sample in the buffer used for visualization
-     * \param[in] parent a QObject* with the handle of the parent
-     */
+    /// Default constructor.
+    ///
+    /// \param[in] plotPlot_size the number of sample in the buffer used for visualization
+    /// \param[in] parent a QObject* with the handle of the parent
     QPitchCore(QObject *parent, const unsigned int plotPlot_size, QPitchCoreOptions options);
 
-    //! Default destructor.
+    /// Default destructor.
     ~QPitchCore();
 
-    //! Set options while QPitchCore is running.
+    /// Set options while QPitchCore is running.
     void setOptions(QPitchCoreOptions options);
 
-    //! Request the running QPitchCore thread to stop.
+    /// Request the running QPitchCore thread to stop.
     void requestStop();
 
-    /*! \brief Dummy callback function to call the real non-static callback that does the work.
-     *  \param[in] input Pointer to the interleaved input samples.
-     *  \param[out] output Pointer to the interleaved output samples.
-     *  \param[in] frameCount Number of sample frames to be processed.
-     *  \param[in] timeInfo Time when the buffer is processed.
-     *  \param[in] statusFlags Whether underflow or overflow occurred.
-     *  \param[in] userData Pointer to user data.
-     */
+    /// Dummy callback function to call the real non-static callback that does the work.
+    ///
+    /// \param[in] input Pointer to the interleaved input samples.
+    /// \param[out] output Pointer to the interleaved output samples.
+    /// \param[in] frameCount Number of sample frames to be processed.
+    /// \param[in] timeInfo Time when the buffer is processed.
+    /// \param[in] statusFlags Whether underflow or overflow occurred.
+    /// \param[in] userData Pointer to user data.
     static int paCallback(const void *input, void *output, unsigned long frameCount,
                           const PaStreamCallbackTimeInfo *timeInfo,
                           PaStreamCallbackFlags statusFlags, void *userData);
 
-    /*! \brief Play the selected WAV file through the selected PortAudio device.
-     *  \param[in] input Pointer to the interleaved input samples.
-     *  \param[in] frameCount Number of sample frames to be processed.
-     */
+    /// Play the selected WAV file through the selected PortAudio device.
+    ///
+    /// \param[in] input Pointer to the interleaved input samples.
+    /// \param[in] frameCount Number of sample frames to be processed.
     int paStoreInputBufferCallback(const SampleType *output, unsigned long frameCount,
                                    const PaStreamCallbackTimeInfo *timeInfo,
                                    PaStreamCallbackFlags statusFlags);
@@ -155,72 +149,98 @@ public slots:
     void setCallbackProfilingEnabled(bool enabled);
 
 signals:
-    //! Emitted when the port audio stream is started.
+    /// Emitted when the port audio stream is started.
     void portAudioStreamStarted(QString device, QString hostApi);
 
-    //! Emitted when any part of the visualization data is updated.
-    /*!
-     * \param[in] visData a reference to the VisualizationData struct
-     */
-    void
-    visualizationDataUpdated(VisualizationData *visData); //! Signal the level of the input signal.
+    /// Emitted when any part of the visualization data is updated.
+    ///
+    /// \param[in] visData a reference to the VisualizationData struct
+    void visualizationDataUpdated(VisualizationData *visData);
 
 protected:
-    //! Main loop of the thread.
+    /// Main loop of the thread.
     virtual void run();
 
 private: /* members */
     // ** PRIVATE IMPLEMENTATION ** //
-    std::unique_ptr<QPitchCorePrivate> _private; //!< The private structure.
+
+    /// The private structure.
+    std::unique_ptr<QPitchCorePrivate> _private;
 
     // ** THREAD SYNCHRONIZATION ** //
-    QMutex _mutex; //!< The main Mutex, guarding boolean events fields.
-    QWaitCondition _cond QPITCH_GUARDED_BY(_mutex); //!< The main CondVar for responding to events.
-    bool _bufferUpdated QPITCH_GUARDED_BY(
-            _mutex); //!< Set to true when the input buffer is filled by the audio backend.
-    bool _stopRequested QPITCH_GUARDED_BY(
-            _mutex); //!< Set to true when the QPitchCore thread is requested to stop.
+
+    /// The main Mutex, guarding boolean events fields.
+    QMutex _mutex;
+
+    /// The main CondVar for responding to events.
+    QWaitCondition _cond QPITCH_GUARDED_BY(_mutex);
+
+    /// Set to true when the input buffer is filled by the audio backend.
+    bool _bufferUpdated QPITCH_GUARDED_BY(_mutex);
+
+    /// Set to true when the QPitchCore thread is requested to stop.
+    bool _stopRequested QPITCH_GUARDED_BY(_mutex);
 
     // ** SETTABLE OPTIONS ** //
+
     QPitchCoreOptions _options;
     std::optional<QPitchCoreOptions> _pendingOptions QPITCH_GUARDED_BY(_mutex);
 
     // ** PORTAUDIO STREAM ** //
-    PaStream *_stream; //!< Handle to the PortAudio stream
+
+    /// Handle to the PortAudio stream
+    PaStream *_stream;
 
     // ** COMMUNICATION WITH PORTAUDIO CALLBACKS ** //
-    QMutex _bufferMutex; //!< A mutex dedicated to _buffer itself.
-    CyclicBuffer _buffer QPITCH_GUARDED_BY(
-            _bufferMutex); //!< Buffer to store the input samples read in the callback
-    std::vector<SampleType>
-            _tmpSampleBuffer; //!< A temporary buffer for dumping samples from the cyclic buffer
+
+    /// A mutex dedicated to _buffer itself.
+    QMutex _bufferMutex;
+
+    /// Buffer to store the input samples read in the callback
+    CyclicBuffer _buffer QPITCH_GUARDED_BY(_bufferMutex);
+
+    /// A temporary buffer for dumping samples from the cyclic buffer
+    std::vector<SampleType> _tmpSampleBuffer;
 
     // ** FFT ** //
+
     std::unique_ptr<PitchDetectionContext> _pitchDetection;
 
     // ** TEMPORARY BUFFERS USED FOR VISUALIZATION ** //
-    VisualizationData _visualizationData; //!< Visualization data shared with the UI thread
+
+    /// Visualization data shared with the UI thread
+    VisualizationData _visualizationData;
 
     // ** CALLBACK PROFILING ** //
-    std::atomic<bool> _callbackProfilingEnabled; //!< Set to true to enable callback profiling
-    bool _callbackProfilingStarted; //!< Set to true when the callback is called the first time after callback profiling is enabled
-    double _lastCallbackTime; //!< The time the last callback was called, as reported by PortAudio
-    double _lastAdcTime; //!< The time the ADC captured the first sample in the last callback, as reported by PortAudio
-    FPSProfiler _callbackProfiler; //!< FPSProfiler for callback.
+
+    /// Set to true to enable callback profiling
+    std::atomic<bool> _callbackProfilingEnabled;
+
+    /// Set to true when the callback is called the first time after callback profiling is enabled
+    bool _callbackProfilingStarted;
+
+    /// The time the last callback was called, as reported by PortAudio
+    double _lastCallbackTime;
+
+    /// The time the ADC captured the first sample in the last callback, as reported by PortAudio
+    double _lastAdcTime;
+
+    /// FPSProfiler for callback.
+    FPSProfiler _callbackProfiler;
 
 private: /* methods */
-    //! Start an input audio stream.
+    /// Start an input audio stream.
     void startStream();
 
-    //! Stop the input audio stream.
+    /// Stop the input audio stream.
     void stopStream();
 
-    //! Called when options changed.
+    /// Called when options changed.
     void onOptionsChanged(QMutexLocker<QMutex> &locker);
 
-    //! Apply options.
+    /// Apply options.
     void reconfigure();
 
-    //! Process the updated buffer.
+    /// Process the updated buffer.
     void processBuffer(QMutexLocker<QMutex> &locker);
 };

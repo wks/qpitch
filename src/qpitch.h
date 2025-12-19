@@ -32,37 +32,33 @@
 class QPitchCore;
 class QTimer;
 
-//! Main window of the application.
-/*!
- * This class implements the main window of the application.
- * It has been created using the QtDesigner and its role is
- * simply to display widgets and connect signals.
- */
-
+/// Main window of the application.
+///
+/// This class implements the main window of the application.
+/// It has been created using the QtDesigner and its role is
+/// simply to display widgets and connect signals.
 class QPitch : public QMainWindow
 {
     Q_OBJECT
 
 public: /* methods */
-    //! Deafult constructor.
-    /*!
-     * \param[in] parent handle to the parent widget
-     */
+    /// Deafult constructor.
+    ///
+    /// \param[in] parent handle to the parent widget
     QPitch(QMainWindow *parent = 0);
 
-    //! Deafult destructor.
+    /// Deafult destructor.
     ~QPitch();
 
 protected: /* methods */
-    //! Function called when the main window is closed.
-    /*!
-     * \param[in] event details of the close event
-     */
+    /// Function called when the main window is closed.
+    ///
+    /// \param[in] event details of the close event
     virtual void closeEvent(QCloseEvent *event);
 
 private: /* static constants */
     // ** BUFFER SIZE ** //
-    static const int PLOT_BUFFER_SIZE; //!< Size of the buffers used for visualization
+    static const int PLOT_BUFFER_SIZE; /// Size of the buffers used for visualization
 
 private: /* members */
     // ** Configurations ** //
@@ -70,31 +66,37 @@ private: /* members */
     std::shared_ptr<TuningParameters> _tuningParameters;
 
     // ** Qt WIDGETS ** //
-    Ui::QPitch _gt; //!< Mainwindow created with Qt-Designer
-    QPitchCore *_hQPitchCore; //!< Handle to the working thread
+
+    /// Mainwindow created with Qt-Designer
+    Ui::QPitch _gt;
+    /// Handle to the working thread
+    QPitchCore *_hQPitchCore;
 
     // ** STATUS BAR ITEMS ** //
-    QLabel _sb_labelDeviceInfo; //!< Label with the device information
+
+    /// Label with the device information
+    QLabel _sb_labelDeviceInfo;
 
     // ** PITCH ESTIMATION ** //
+
     std::optional<EstimatedNote> _estimatedNote;
 
 private slots:
-    //! Open a dialog to configure the application settings.
+    /// Open a dialog to configure the application settings.
     void showPreferencesDialog();
 
-    //! Open the about dialog.
+    /// Open the about dialog.
     void showAboutDialog();
 
-    //! Update the application settings.
+    /// Update the application settings.
     void setApplicationSettings();
 
-    //! Update all the elements in the GUI.
+    /// Update all the elements in the GUI.
     void updateQPitchGui();
 
-    //! Handle updated VisualizationData
+    /// Handle updated VisualizationData
     void onVisualizationDataUpdated(VisualizationData *visData);
 
-    //! Called when the PortAudio stream is started.
+    /// Called when the PortAudio stream is started.
     void onPortAudioStreamStarted(QString device, QString hostApi);
 };

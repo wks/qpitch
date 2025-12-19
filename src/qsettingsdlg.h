@@ -25,48 +25,55 @@
 #include "ui_qsettingsdlg.h"
 #include "qpitchsettings.h"
 
-//! Settings dialog to configure the application
-/*!
- * This class implements a dialog to configure the parameters of
- * the audio stream and the parameters of the pitch detection
- * algorithm.
- * The configuration of the audio stream includes the selection
- * of the sample frequency and of the size of the frame used to
- * compute the FFT.
- * The configuration of the pitch detection algorithm includes
- * the selection of the fundamental frequency (A4 = 440Hz as the
- * default) used to build the note scale and the selection of the
- * tuning notation (US, French and German notation).
- */
-
+/// Settings dialog to configure the application
+///
+/// This class implements a dialog to configure the parameters of
+/// the audio stream and the parameters of the pitch detection
+/// algorithm.
+///
+/// The configuration of the audio stream includes the selection
+/// of the sample frequency and of the size of the frame used to
+/// compute the FFT.
+///
+/// The configuration of the pitch detection algorithm includes
+/// the selection of the fundamental frequency (A4 = 440Hz as the
+/// default) used to build the note scale and the selection of the
+/// tuning notation (US, French and German notation).
 class QSettingsDlg : public QDialog
 {
     Q_OBJECT
 
 public: /* members */
-    //! Deafult constructor.
-    /*!
-     * \param[in] settings structure with the current audio stream and tuning parameters
-     * \param[in] parent handle to the parent widget
-     */
+    /// Deafult constructor.
+    ///
+    /// \param[in] settings structure with the current audio stream and tuning parameters
+    /// \param[in] parent handle to the parent widget
     QSettingsDlg(const QPitchSettings &settings, QWidget *parent = 0);
 
-    //! Return the result of setting.  Only call it after the setting was accepted.
+    /// Return the result of setting.  Only call it after the setting was accepted.
     const QPitchSettings &result();
 
 public slots:
-    //! Restore default application settings.
+    /// Restore default application settings.
     void restoreDefaultSettings();
 
-    //! Accept the application settings in the dialog.
+    /// Accept the application settings in the dialog.
     void acceptSettings();
 
 private: /* members */
     // ** Qt WIDGETS ** //
-    Ui::QSettingsDlg _sd; //!< Dialog created with Qt-Designer
-    QPitchSettings _result; //!< The result to be loaded
+
+    /// Dialog created with Qt-Designer
+    Ui::QSettingsDlg _sd;
+
+    /// The result to be loaded
+    QPitchSettings _result;
 
     // ** METHODS ** //
-    void load(const QPitchSettings &settings); //!< Load widget contents
-    void dump(QPitchSettings &settings); //!< Dump widget contents
+
+    /// Load widget contents
+    void load(const QPitchSettings &settings);
+
+    /// Dump widget contents
+    void dump(QPitchSettings &settings);
 };
