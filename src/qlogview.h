@@ -94,12 +94,4 @@ private: /* members */
     std::shared_ptr<TuningParameters> _tuningParameters;
 
     std::optional<EstimatedNote> _estimatedNote;
-
-    // ** REPAINT FLAG **//
-
-    /// Redraw everything when true, otherwise redraw only the note scale
-    bool _drawBackground;
-
-    /// QPicture used to store the background to reduce the load
-    QPicture _picture;
 };
