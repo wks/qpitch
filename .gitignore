@@ -1,0 +1,8 @@
+# Vim swap files
+.*.swp
+
+# Build outputs
+/build*
+
+# Doxygen output
+/doxygen_output
