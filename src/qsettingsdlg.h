@@ -50,10 +50,10 @@ class QSettingsDlg : public QDialog
     Q_OBJECT
 
 public: /* members */
-    /// Deafult constructor.
+    /// Constructor.
     ///
     /// \param[in] settings structure with the current audio stream and tuning parameters
-    /// \param[in] parent handle to the parent widget
+    /// \param[in] parent the parent widget
     QSettingsDlg(const QPitchSettings &settings, QWidget *parent = 0);
 
     /// Destructor. We must define the destructor body in .cpp where `Ui::QSettingsDlg` is complete.

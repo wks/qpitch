@@ -46,9 +46,9 @@ class QPitch : public QMainWindow
     Q_OBJECT
 
 public: /* methods */
-    /// Deafult constructor.
+    /// Constructor.
     ///
-    /// \param[in] parent handle to the parent widget
+    /// \param[in] parent the parent widget
     QPitch(QMainWindow *parent = 0);
 
     /// Destructor. All resources are freed using smart pointers or Qt parent mechanism, but we must

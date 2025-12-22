@@ -38,9 +38,9 @@ class QAboutDlg : public QDialog
     Q_OBJECT
 
 public:
-    /// Deafult constructor.
+    /// Constructor.
     ///
-    /// \param[in] parent handle to the parent widget
+    /// \param[in] parent the parent widget
     QAboutDlg(QWidget *parent = 0);
 
     /// Destructor. We must define the destructor body in .cpp where `Ui::QAboutDlg` is complete.
