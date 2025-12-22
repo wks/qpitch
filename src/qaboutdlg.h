@@ -22,7 +22,12 @@
 
 #pragma once
 
-#include "ui_qaboutdlg.h"
+#include <QDialog>
+#include <memory>
+
+namespace Ui {
+class QAboutDlg;
+}
 
 /// About dialog to show application details
 ///
@@ -38,9 +43,13 @@ public:
     /// \param[in] parent handle to the parent widget
     QAboutDlg(QWidget *parent = 0);
 
+    /// Destructor. We must define the destructor body in .cpp where `Ui::QAboutDlg` is complete.
+    /// This is required for the `unique_ptr` to work.
+    ~QAboutDlg();
+
 private:
     // ** Qt WIDGETS ** //
 
     /// Dialog created with Qt-Designer
-    Ui::QAboutDlg _ab;
+    std::unique_ptr<Ui::QAboutDlg> _ui;
 };

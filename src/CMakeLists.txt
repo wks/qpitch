@@ -5,11 +5,6 @@
 #                         William Spinelli <wylliam@tiscali.it>
 ##
 
-# place the binaries to the root of the build directory
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-
-set(CMAKE_AUTOUIC_SEARCH_PATHS ui)
-
 # set object files dependencies for the executable
 add_executable( qpitch
     main.cpp

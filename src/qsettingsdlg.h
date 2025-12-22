@@ -22,8 +22,14 @@
 
 #pragma once
 
-#include "ui_qsettingsdlg.h"
+#include <QDialog>
+#include <memory>
+
 #include "qpitchsettings.h"
+
+namespace Ui {
+class QSettingsDlg;
+}
 
 /// Settings dialog to configure the application
 ///
@@ -50,6 +56,10 @@ public: /* members */
     /// \param[in] parent handle to the parent widget
     QSettingsDlg(const QPitchSettings &settings, QWidget *parent = 0);
 
+    /// Destructor. We must define the destructor body in .cpp where `Ui::QSettingsDlg` is complete.
+    /// This is required for the `unique_ptr` to work.
+    ~QSettingsDlg();
+
     /// Return the result of setting.  Only call it after the setting was accepted.
     const QPitchSettings &result();
 
@@ -64,7 +74,7 @@ private: /* members */
     // ** Qt WIDGETS ** //
 
     /// Dialog created with Qt-Designer
-    Ui::QSettingsDlg _sd;
+    std::unique_ptr<Ui::QSettingsDlg> _ui;
 
     /// The result to be loaded
     QPitchSettings _result;

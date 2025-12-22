@@ -22,20 +22,26 @@
 
 #include "qsettingsdlg.h"
 
+#include "ui/ui_qsettingsdlg.h"
+
 #include <QPushButton>
 
 QSettingsDlg::QSettingsDlg(const QPitchSettings &settings, QWidget *parent) : QDialog(parent)
 {
+    _ui = std::make_unique<Ui::QSettingsDlg>();
+
     // ** SETUP THE MAIN WINDOW ** //
-    _sd.setupUi(this);
+    _ui->setupUi(this);
 
     // ** SETUP CONNECTIONS ** //
-    connect(_sd.buttonBox, &QDialogButtonBox::accepted, this, &QSettingsDlg::acceptSettings);
-    connect(_sd.buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::pressed, this,
+    connect(_ui->buttonBox, &QDialogButtonBox::accepted, this, &QSettingsDlg::acceptSettings);
+    connect(_ui->buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::pressed, this,
             &QSettingsDlg::restoreDefaultSettings);
 
     load(settings);
 }
+
+QSettingsDlg::~QSettingsDlg() { }
 
 const QPitchSettings &QSettingsDlg::result()
 {
@@ -55,24 +61,24 @@ void QSettingsDlg::restoreDefaultSettings()
 
 void QSettingsDlg::load(const QPitchSettings &settings)
 {
-    _sd.comboBox_sampleFrequency->setCurrentIndex(
-            _sd.comboBox_sampleFrequency->findText(QString::number(settings.sampleFrequency)));
-    _sd.comboBox_frameSize->setCurrentIndex(
-            _sd.comboBox_frameSize->findText(QString::number(settings.fftFrameSize)));
-    _sd.doubleSpinBox_fundamentalFrequency->setValue(settings.fundamentalFrequency);
+    _ui->comboBox_sampleFrequency->setCurrentIndex(
+            _ui->comboBox_sampleFrequency->findText(QString::number(settings.sampleFrequency)));
+    _ui->comboBox_frameSize->setCurrentIndex(
+            _ui->comboBox_frameSize->findText(QString::number(settings.fftFrameSize)));
+    _ui->doubleSpinBox_fundamentalFrequency->setValue(settings.fundamentalFrequency);
 
     switch (settings.tuningNotation) {
     default:
     case TuningNotation::US:
-        _sd.radioButton_scaleUs->setChecked(true);
+        _ui->radioButton_scaleUs->setChecked(true);
         break;
 
     case TuningNotation::FRENCH:
-        _sd.radioButton_scaleFrench->setChecked(true);
+        _ui->radioButton_scaleFrench->setChecked(true);
         break;
 
     case TuningNotation::GERMAN:
-        _sd.radioButton_scaleGerman->setChecked(true);
+        _ui->radioButton_scaleGerman->setChecked(true);
         break;
     }
 }
@@ -80,17 +86,17 @@ void QSettingsDlg::load(const QPitchSettings &settings)
 void QSettingsDlg::dump(QPitchSettings &settings)
 {
     // ** UPDATE THE APPLICATION SETTINGS ** //
-    settings.sampleFrequency = _sd.comboBox_sampleFrequency->currentText().toUInt();
-    settings.fftFrameSize = _sd.comboBox_frameSize->currentText().toUInt();
-    settings.fundamentalFrequency = _sd.doubleSpinBox_fundamentalFrequency->value();
+    settings.sampleFrequency = _ui->comboBox_sampleFrequency->currentText().toUInt();
+    settings.fftFrameSize = _ui->comboBox_frameSize->currentText().toUInt();
+    settings.fundamentalFrequency = _ui->doubleSpinBox_fundamentalFrequency->value();
 
     settings.tuningNotation = TuningNotation::US;
 
-    if (_sd.radioButton_scaleUs->isChecked()) {
+    if (_ui->radioButton_scaleUs->isChecked()) {
         settings.tuningNotation = TuningNotation::US;
-    } else if (_sd.radioButton_scaleFrench->isChecked()) {
+    } else if (_ui->radioButton_scaleFrench->isChecked()) {
         settings.tuningNotation = TuningNotation::FRENCH;
-    } else if (_sd.radioButton_scaleGerman->isChecked()) {
+    } else if (_ui->radioButton_scaleGerman->isChecked()) {
         settings.tuningNotation = TuningNotation::GERMAN;
     }
 }

@@ -22,6 +22,8 @@
 
 #include "qpitch.h"
 
+#include "ui/ui_qpitch.h"
+
 #include "qaboutdlg.h"
 #include "qsettingsdlg.h"
 #include "qpitchcore.h"
@@ -38,8 +40,10 @@ const int QPitch::PLOT_BUFFER_SIZE = 551; // 44100 * 0.05 / 4 = 551.25
 
 QPitch::QPitch(QMainWindow *parent) : QMainWindow(parent)
 {
+    _ui = std::make_unique<Ui::QPitch>();
+
     // ** SETUP THE MAIN WINDOW ** //
-    _gt.setupUi(this);
+    _ui->setupUi(this);
 
     _settings.load();
 
@@ -65,36 +69,36 @@ QPitch::QPitch(QMainWindow *parent) : QMainWindow(parent)
     // The input signal acquired from the microphone or from the line-in input is plotted in the
     // upper axis. The range of the x-axis is determined by the buffer size of the visualization
     // data, and may vary with the sampling frequency.
-    _gt.widget_plotSamples->setTitle("Samples [ms]");
-    _gt.widget_plotSamples->setScaleKind(PlotView::ScaleKind::Linear);
-    _gt.widget_plotSamples->setLinePen(QPen(Qt::GlobalColor::darkGreen, 1.0));
+    _ui->widget_plotSamples->setTitle("Samples [ms]");
+    _ui->widget_plotSamples->setScaleKind(PlotView::ScaleKind::Linear);
+    _ui->widget_plotSamples->setLinePen(QPen(Qt::GlobalColor::darkGreen, 1.0));
 
     // The middle axis shows the energy density spectrum of the input signal in the frequency
     // domain.  It is also the Fourier transform of the autocorrelation.
-    _gt.widget_plotSpectrum->setTitle("Frequency Spectrum [Hz]");
-    _gt.widget_plotSpectrum->setScaleKind(PlotView::ScaleKind::Linear);
-    _gt.widget_plotSpectrum->setLinePen(QPen(Qt::GlobalColor::darkCyan, 1.0));
-    _gt.widget_plotSpectrum->setMarkerPen(
+    _ui->widget_plotSpectrum->setTitle("Frequency Spectrum [Hz]");
+    _ui->widget_plotSpectrum->setScaleKind(PlotView::ScaleKind::Linear);
+    _ui->widget_plotSpectrum->setLinePen(QPen(Qt::GlobalColor::darkCyan, 1.0));
+    _ui->widget_plotSpectrum->setMarkerPen(
             QPen(Qt::GlobalColor::darkYellow, 1.0, Qt::PenStyle::DotLine));
 
     // The autocorrelation of the input signal is plotted in the lower axis. The x-axis has the same
     // scale as the input signal in the time domain. The peak of the autocorrelation used to detect
     // the frequency of the input signal is indicated by a red line, and its x-coordinate is the
     // period of the input signal, or the reciprocal of the estimated frequency.
-    _gt.widget_plotAutoCorr->setTitle("Autocorrelation [ms]");
-    _gt.widget_plotAutoCorr->setScaleKind(PlotView::ScaleKind::Linear);
-    _gt.widget_plotAutoCorr->setLinePen(QPen(Qt::GlobalColor::darkBlue, 1.0));
-    _gt.widget_plotAutoCorr->setMarkerPen(QPen(Qt::GlobalColor::red, 1.0));
+    _ui->widget_plotAutoCorr->setTitle("Autocorrelation [ms]");
+    _ui->widget_plotAutoCorr->setScaleKind(PlotView::ScaleKind::Linear);
+    _ui->widget_plotAutoCorr->setLinePen(QPen(Qt::GlobalColor::darkBlue, 1.0));
+    _ui->widget_plotAutoCorr->setMarkerPen(QPen(Qt::GlobalColor::red, 1.0));
 
-    _gt.widget_qlogview->setTuningParameters(_tuningParameters);
+    _ui->widget_qlogview->setTuningParameters(_tuningParameters);
 
     // ** SETUP THE CONNECTIONS ** //
     // File menu
-    connect(_gt.action_preferences, &QAction::triggered, this, &QPitch::showPreferencesDialog);
+    connect(_ui->action_preferences, &QAction::triggered, this, &QPitch::showPreferencesDialog);
 
     // Help menu
-    connect(_gt.action_about, &QAction::triggered, this, &QPitch::showAboutDialog);
-    connect(_gt.action_aboutQt, &QAction::triggered, qApp, &QApplication::aboutQt);
+    connect(_ui->action_about, &QAction::triggered, this, &QPitch::showAboutDialog);
+    connect(_ui->action_aboutQt, &QAction::triggered, qApp, &QApplication::aboutQt);
 
     // Internal connections
     connect(_hQPitchCore, &QPitchCore::visualizationDataUpdated, this,
@@ -174,27 +178,28 @@ void QPitch::updateQPitchGui()
     fp.tick();
 
     // ** UPDATE WIDGETS ** //
-    _gt.widget_plotSamples->update();
-    _gt.widget_plotSpectrum->update();
-    _gt.widget_plotAutoCorr->update();
-    _gt.widget_qlogview->update();
-    _gt.widget_freqDiff->update();
+    _ui->widget_plotSamples->update();
+    _ui->widget_plotSpectrum->update();
+    _ui->widget_plotAutoCorr->update();
+    _ui->widget_qlogview->update();
+    _ui->widget_freqDiff->update();
 
     // ** UPDATE LABELS ** //
     if (_estimatedNote) {
         const EstimatedNote &estimatedNote = _estimatedNote.value();
-        _gt.lineEdit_note->setText(QString("%1 Hz").arg(estimatedNote.noteFrequency, 0, 'f', 2));
-        _gt.lineEdit_frequency->setText(
+        _ui->lineEdit_note->setText(QString("%1 Hz").arg(estimatedNote.noteFrequency, 0, 'f', 2));
+        _ui->lineEdit_frequency->setText(
                 QString("%1 Hz").arg(estimatedNote.estimatedFrequency, 0, 'f', 2));
-        _gt.lineEdit_cents->setText(QString("%1").arg(estimatedNote.currentPitchDeviation * 100.0));
+        _ui->lineEdit_cents->setText(
+                QString("%1").arg(estimatedNote.currentPitchDeviation * 100.0));
     } else {
         // if frequencies are out of range clear widgets
-        _gt.lineEdit_note->clear();
-        _gt.lineEdit_frequency->clear();
-        _gt.lineEdit_cents->clear();
+        _ui->lineEdit_note->clear();
+        _ui->lineEdit_frequency->clear();
+        _ui->lineEdit_cents->clear();
     }
 
-    _gt.lineEdit_fps->setText(QString("%1").arg(fp.getFPS()));
+    _ui->lineEdit_fps->setText(QString("%1").arg(fp.getFPS()));
 }
 
 void QPitch::onVisualizationDataUpdated(VisualizationData *visData)
@@ -202,20 +207,20 @@ void QPitch::onVisualizationDataUpdated(VisualizationData *visData)
     {
         QMutexLocker visDataLocker(&visData->mutex);
 
-        _gt.widget_plotSamples->setData(visData->plotSample);
-        _gt.widget_plotSamples->setScaleRange(visData->plotSampleRange);
-        _gt.widget_plotSpectrum->setData(visData->plotSpectrum);
-        _gt.widget_plotSpectrum->setScaleRange(visData->plotSpectrumRange);
-        _gt.widget_plotSpectrum->setMarker(visData->estimatedFrequency);
-        _gt.widget_plotAutoCorr->setData(visData->plotAutoCorr);
-        _gt.widget_plotAutoCorr->setScaleRange(visData->plotAutoCorrRange);
+        _ui->widget_plotSamples->setData(visData->plotSample);
+        _ui->widget_plotSamples->setScaleRange(visData->plotSampleRange);
+        _ui->widget_plotSpectrum->setData(visData->plotSpectrum);
+        _ui->widget_plotSpectrum->setScaleRange(visData->plotSpectrumRange);
+        _ui->widget_plotSpectrum->setMarker(visData->estimatedFrequency);
+        _ui->widget_plotAutoCorr->setData(visData->plotAutoCorr);
+        _ui->widget_plotAutoCorr->setScaleRange(visData->plotAutoCorrRange);
         double estimatedPeriod = 1000.0
                 / visData->estimatedFrequency; // Period of the detected frequency, in milliseconds.
-        _gt.widget_plotAutoCorr->setMarker(estimatedPeriod);
+        _ui->widget_plotAutoCorr->setMarker(estimatedPeriod);
 
-        _gt.widget_qlogview->setEstimatedNote(visData->estimatedNote);
+        _ui->widget_qlogview->setEstimatedNote(visData->estimatedNote);
         _estimatedNote = visData->estimatedNote;
-        _gt.widget_freqDiff->setEstimatedNote(visData->estimatedNote);
+        _ui->widget_freqDiff->setEstimatedNote(visData->estimatedNote);
     }
     updateQPitchGui();
 }
@@ -226,5 +231,5 @@ void QPitch::onPortAudioStreamStarted(QString device, QString hostApi)
     QString msg = QString("Device: %1, Host API: %2").arg(device).arg(hostApi);
     _sb_labelDeviceInfo.setText(msg);
     _sb_labelDeviceInfo.setIndent(10);
-    _gt.statusbar->addWidget(&_sb_labelDeviceInfo, 1);
+    _ui->statusbar->addWidget(&_sb_labelDeviceInfo, 1);
 }

@@ -22,8 +22,14 @@
 
 #include "qaboutdlg.h"
 
+#include "ui/ui_qaboutdlg.h"
+
 QAboutDlg::QAboutDlg(QWidget *parent) : QDialog(parent)
 {
+    _ui = std::make_unique<Ui::QAboutDlg>();
+
     // ** SETUP THE MAIN WINDOW ** //
-    _ab.setupUi(this);
+    _ui->setupUi(this);
 }
+
+QAboutDlg::~QAboutDlg() { }

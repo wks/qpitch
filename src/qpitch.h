@@ -22,15 +22,19 @@
 
 #pragma once
 
-#include "ui_qpitch.h"
 #include "qpitchsettings.h"
 #include "visualization_data.h"
 
+#include <QLabel>
 #include <QMainWindow>
 #include <memory>
 
 class QPitchCore;
 class QTimer;
+
+namespace Ui {
+class QPitch;
+}
 
 /// Main window of the application.
 ///
@@ -47,7 +51,10 @@ public: /* methods */
     /// \param[in] parent handle to the parent widget
     QPitch(QMainWindow *parent = 0);
 
-    /// Deafult destructor.
+    /// Destructor. All resources are freed using smart pointers or Qt parent mechanism, but we must
+    /// define the destructor body in .cpp where `Ui::QPitch` is complete. This is required for the
+    /// `std::unique_ptr<Ui::QPitch>` to work when we include `ui/ui_qpitch.h` in `qpitch.cpp` but
+    /// not `qpitch.h`.
     ~QPitch();
 
 protected: /* methods */
@@ -68,7 +75,7 @@ private: /* members */
     // ** Qt WIDGETS ** //
 
     /// Mainwindow created with Qt-Designer
-    Ui::QPitch _gt;
+    std::unique_ptr<Ui::QPitch> _ui;
     /// Handle to the working thread
     QPitchCore *_hQPitchCore;
 
